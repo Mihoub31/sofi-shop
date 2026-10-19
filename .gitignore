@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+instance/
+__pycache__/
+.controle_temporaire/
+sofi_controle.js
+diagnostic_grossistes.txt
+templates/*.bak
+templates/*.backup
+templates/*.avant_*
+templates/*.etape_actuelle
+
+sauvegardes/
