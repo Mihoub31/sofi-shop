@@ -510,6 +510,7 @@
     }
 
     const STORAGE_KEY="sofi_shop_pro_v4";
+    const CATALOG_VERSION=1;
     function loadState(){
       const base=defaultState();
       try{
@@ -517,10 +518,10 @@
         if(!saved||saved.version!==4)return base;
         const delivery={};
         Object.keys(base.settings.delivery).forEach(code=>delivery[code]={...base.settings.delivery[code],...(saved.settings?.delivery?.[code]||{})});
-        return {...base,...saved,settings:{...base.settings,...saved.settings,delivery},products:saved.products?.length?saved.products:base.products};
+        return {...base,...saved,settings:{...base.settings,...saved.settings,delivery},products:(saved.products?.length&&saved.catalogVersion===CATALOG_VERSION)?saved.products:base.products};
       }catch(e){return base}
     }
-    let state=loadState();
+    let state=loadState();state.catalogVersion=CATALOG_VERSION;
     let lang=state.settings.language||"fr";
     let appliedCoupon="";
     let cartWilaya="",cartMethod="home";
