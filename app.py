@@ -170,30 +170,23 @@ def save_order():
     except (TypeError, ValueError, OverflowError):
         return jsonify({"error": "Montants invalides"}), 400
 
-    conn = None
+    if psycopg is None or not os.environ.get("DATABASE_URL"):
+        return jsonify({"error": "Base de données non configurée"}), 503
+    order = {
+        "id": order_id, "ref": ref, "createdAt": created_at, "status": "pending",
+        "demo": False, "customer": customer, "delivery": delivery,
+        "payment": data["payment"], "items": items, "totals": totals,
+    }
+    if len(json.dumps(order, ensure_ascii=False)) > 60000:
+        return jsonify({"error": "Commande trop volumineuse"}), 400
     try:
-        conn = get_db()
-        with conn:
-            conn.execute(
-                """INSERT INTO orders
-                (id, ref, created_at, status, customer_json,
-                 delivery_json, payment, totals_json, source)
-                VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, 'website')""",
-                (order_id, ref, created_at,
-                 json.dumps(customer, ensure_ascii=False),
-                 json.dumps(delivery, ensure_ascii=False),
-                 data["payment"],
-                 json.dumps(totals, ensure_ascii=False))
-            )
-            for product_id, name, qty, price, total in clean_items:
-                conn.execute(
-                    """INSERT INTO order_items
-                    (order_id, product_id, name, quantity, unit_price, total)
-                    VALUES (?, ?, ?, ?, ?, ?)""",
-                    (order_id, product_id, name, qty, price, total)
-                )
+        _ensure_orders()
+        with pg() as c:
+            c.execute(
+                "INSERT INTO orders_v2 (id, ref, created_at, status, data) VALUES (%s, %s, %s, 'pending', %s)",
+                (order_id, ref, created_at, Jsonb(order)))
         return jsonify({"ok": True, "id": order_id, "ref": ref}), 201
-    except sqlite3.IntegrityError:
+    except psycopg.errors.UniqueViolation:
         return jsonify({"error": "Commande déjà enregistrée"}), 409
     except Exception:
         app.logger.exception("Erreur enregistrement commande")
@@ -462,6 +455,58 @@ def api_get_image(iid):
         return "", 404
     return Response(bytes(row["data"]), mimetype=row["mime"],
                     headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+_STATUSES = ("pending", "confirmed", "prepared", "shipped", "delivered", "cancelled")
+
+
+def _ensure_orders():
+    with pg() as c:
+        c.execute("""CREATE TABLE IF NOT EXISTS orders_v2 (
+            id TEXT PRIMARY KEY, ref TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending', data JSONB NOT NULL,
+            received_at TIMESTAMPTZ DEFAULT now())""")
+
+
+@app.route("/api/admin/orders", methods=["GET"])
+def api_admin_orders():
+    g = _admin_db_guard()
+    if g:
+        return g
+    try:
+        _ensure_orders()
+        with pg() as c:
+            rows = c.execute("SELECT data, status FROM orders_v2 ORDER BY created_at DESC LIMIT 1000").fetchall()
+        out = []
+        for r in rows:
+            o = r["data"]
+            o["status"] = r["status"]
+            out.append(o)
+        return jsonify(out)
+    except Exception:
+        app.logger.exception("Lecture commandes")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+
+@app.route("/api/admin/orders/<oid>/status", methods=["PATCH"])
+def api_admin_order_status(oid):
+    g = _admin_db_guard()
+    if g:
+        return g
+    body = request.get_json(silent=True)
+    st = body.get("status") if isinstance(body, dict) else None
+    if st not in _STATUSES or not _ID_RE.match(oid):
+        return jsonify({"error": "Statut invalide"}), 400
+    try:
+        _ensure_orders()
+        with pg() as c:
+            cur = c.execute("UPDATE orders_v2 SET status = %s WHERE id = %s", (st, oid))
+            if cur.rowcount == 0:
+                return jsonify({"error": "Commande introuvable"}), 404
+        return jsonify({"ok": True})
+    except Exception:
+        app.logger.exception("Statut commande")
+        return jsonify({"error": "Erreur serveur"}), 500
 
 # ===== Fin produits =====
 

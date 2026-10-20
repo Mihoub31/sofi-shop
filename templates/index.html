@@ -580,9 +580,10 @@
     let productModalState={id:null,mode:"retail",qty:1};
     let adminSession=false,adminTab="dashboard",customerPhone="",clientSegment="customers",deliverySearch="",adminOrderStatus="";
     let adminSessionReady=false;
+    function loadServerOrders(){return fetch("/api/admin/orders").then(r=>r.ok?r.json():null).then(list=>{if(Array.isArray(list)){state.orders=list;persist();if(adminSession&&document.getElementById("adminMain"))renderAdminMain()}}).catch(()=>{})}
     let adminSessionCheck=fetch("/api/admin/session")
       .then(r=>r.ok?r.json():{authenticated:false})
-      .then(d=>{adminSession=d.authenticated===true;adminSessionReady=true;return adminSession})
+      .then(d=>{adminSession=d.authenticated===true;adminSessionReady=true;if(adminSession)loadServerOrders();return adminSession})
       .catch(()=>{adminSession=false;adminSessionReady=true;return false});
 
     const app=document.getElementById("app");
@@ -1267,7 +1268,7 @@
       if(e.target.name==="delivery"){checkoutMethod=e.target.value;updateCheckoutSummary()}
 
       if(e.target.id==="adminOrderStatus"){adminOrderStatus=e.target.value;renderAdminMain()}
-      if(e.target.dataset.orderStatus){const o=state.orders.find(x=>x.id===e.target.dataset.orderStatus);if(o){o.status=e.target.value;persist();toast(t("saveSuccess"));renderAdminMain()}}
+      if(e.target.dataset.orderStatus){const o=state.orders.find(x=>x.id===e.target.dataset.orderStatus);if(o){o.status=e.target.value;fetch("/api/admin/orders/"+encodeURIComponent(o.id)+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:o.status})}).then(r=>{if(!r.ok)toast("Statut non enregistré","error")}).catch(()=>toast("Statut non enregistré","error"));persist();toast(t("saveSuccess"));renderAdminMain()}}
       if(e.target.dataset.leadStatus){const l=state.leads.find(x=>x.id===e.target.dataset.leadStatus);if(l){l.status=e.target.value;persist();toast(t("saveSuccess"))}}
       if(e.target.dataset.promoToggle){const p=state.promos.find(x=>x.id===e.target.dataset.promoToggle);if(p){p.active=e.target.checked;persist();toast(t("saveSuccess"))}}
       if(e.target.id==="pImage"){const p=document.getElementById("imagePreview");if(p)p.innerHTML=`<img src="${safeImage(e.target.value)}" style="width:90px;height:90px;object-fit:cover;border-radius:12px">`}
@@ -1297,7 +1298,7 @@
             toast(result.error||t("invalidLogin"),"error");
             return;
           }
-          adminSession=true;
+          adminSession=true;loadServerOrders();
           closeModal();
           navigate("admin");
           toast(t("signIn"));
