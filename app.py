@@ -399,6 +399,70 @@ def api_product_delete(pid):
     except Exception:
         app.logger.exception("Suppression produit")
         return jsonify({"error": "Erreur serveur"}), 500
+
+import secrets as _secrets
+from flask import Response
+
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+
+
+def _ensure_images():
+    with pg() as c:
+        c.execute("""CREATE TABLE IF NOT EXISTS product_images (
+            id TEXT PRIMARY KEY, mime TEXT NOT NULL, data BYTEA NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT now())""")
+
+
+def _image_mime(b):
+    if b[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if b[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if b[:4] == b"RIFF" and b[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+@app.route("/api/admin/upload", methods=["POST"])
+def api_upload_image():
+    g = _admin_db_guard()
+    if g:
+        return g
+    f = request.files.get("file")
+    data = f.read() if f else b""
+    if not data or len(data) > 3 * 1024 * 1024:
+        return jsonify({"error": "Image vide ou trop lourde (max 3 Mo)"}), 400
+    mime = _image_mime(data)
+    if not mime:
+        return jsonify({"error": "Format non accepté (JPG, PNG ou WEBP)"}), 400
+    iid = _secrets.token_urlsafe(12)
+    try:
+        _ensure_images()
+        with pg() as c:
+            c.execute("INSERT INTO product_images (id, mime, data) VALUES (%s, %s, %s)",
+                      (iid, mime, data))
+        return jsonify({"ok": True, "url": "/api/images/" + iid}), 201
+    except Exception:
+        app.logger.exception("Envoi image")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+
+@app.route("/api/images/<iid>", methods=["GET"])
+def api_get_image(iid):
+    if not _ID_RE.match(iid) or psycopg is None or not os.environ.get("DATABASE_URL"):
+        return "", 404
+    try:
+        _ensure_images()
+        with pg() as c:
+            row = c.execute("SELECT mime, data FROM product_images WHERE id = %s", (iid,)).fetchone()
+    except Exception:
+        app.logger.exception("Lecture image")
+        return "", 500
+    if not row:
+        return "", 404
+    return Response(bytes(row["data"]), mimetype=row["mime"],
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
 # ===== Fin produits =====
 
 if __name__ == "__main__":

@@ -550,7 +550,7 @@
     function num(value){return new Intl.NumberFormat(lang==="ar"?"ar-DZ":lang==="en"?"en-DZ":"fr-DZ",{maximumFractionDigits:0}).format(Number(value)||0)}
     function money(value){return `${num(value)} DA`}
     function categoryName(slug){const c=categories.find(x=>x.slug===slug);return c?tr(c):slug}
-    function safeImage(url){return /^https?:\/\//i.test(url||"")?url:placeholderImage}
+    function safeImage(url){return /^(https?:\/\/|\/api\/images\/)/i.test(url||"")?url:placeholderImage}
     function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
     function icon(name){return `<i data-lucide="${name}"></i>`}
     function refreshIcons(){if(window.lucide)window.lucide.createIcons()}
@@ -1008,6 +1008,28 @@
       </div></form>`;
     }
 
+    document.addEventListener("change",async e=>{
+      if(!e.target||e.target.id!=="pImageFile")return;
+      const file=e.target.files[0];if(!file)return;
+      const st=document.getElementById("imageStatus");
+      st.textContent="Envoi en cours…";
+      try{
+        const bmp=await createImageBitmap(file);
+        const sc=Math.min(1,1200/Math.max(bmp.width,bmp.height));
+        const cv=document.createElement("canvas");
+        cv.width=Math.round(bmp.width*sc);cv.height=Math.round(bmp.height*sc);
+        const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);
+        cx.drawImage(bmp,0,0,cv.width,cv.height);
+        const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",0.85));
+        const fd=new FormData();fd.append("file",blob,"photo.jpg");
+        const res=await fetch("/api/admin/upload",{method:"POST",body:fd});
+        const j=await res.json().catch(()=>({}));
+        if(!res.ok){st.textContent=j.error||"Envoi impossible";return}
+        document.getElementById("pImage").value=j.url;
+        const pv=document.querySelector("#imagePreview img");if(pv)pv.src=j.url;
+        st.textContent="Image envoyée ✓";
+      }catch(err){st.textContent="Envoi impossible"}
+    });
     function openProductEditor(id=""){
       const p=state.products.find(x=>x.id===id)||{id:"",name:{fr:"",ar:"",en:""},brand:"",category:"maquillage",desc:{fr:"",ar:"",en:""},price:1000,compareAt:0,stock:20,image:galleryImages[0],featured:false,isNew:true,rating:5,reviews:0};
       const body=`<form id="productEditorForm"><input type="hidden" name="id" value="${esc(p.id)}"><div class="admin-form">
@@ -1022,7 +1044,7 @@
         <div class="form-group"><label class="form-label" for="pPrice">${t("retail")} (DA)</label><input class="form-control" id="pPrice" name="price" type="number" min="0" required value="${p.price}"></div>
         <div class="form-group"><label class="form-label" for="pCompare">${t("comparePrice")} (DA)</label><input class="form-control" id="pCompare" name="compareAt" type="number" min="0" value="${p.compareAt||0}"></div>
         <div class="form-group"><label class="form-label" for="pStock">${t("stock")}</label><input class="form-control" id="pStock" name="stock" type="number" min="0" required value="${p.stock}"></div>
-        <div class="form-group full"><label class="form-label" for="pImage">${t("imageUrl")}</label><input class="form-control" id="pImage" name="image" type="url" required value="${esc(p.image)}"><div id="imagePreview" style="margin-top:9px"><img src="${safeImage(p.image)}" alt="" style="width:90px;height:90px;object-fit:cover;border-radius:12px"></div></div>
+        <div class="form-group full"><label class="form-label" for="pImage">${t("imageUrl")}</label><input class="form-control" id="pImage" name="image" type="text" required value="${esc(p.image)}"><input class="form-control" type="file" id="pImageFile" accept="image/*" style="margin-top:9px"><div id="imageStatus" class="small muted" style="margin-top:6px"></div><div id="imagePreview" style="margin-top:9px"><img src="${safeImage(p.image)}" alt="" style="width:90px;height:90px;object-fit:cover;border-radius:12px"></div></div>
         <div class="form-group full"><label class="form-label">${t("photoUrl")}</label><div class="image-gallery">${galleryImages.map((u,i)=>`<button type="button" data-gallery-image="${esc(u)}" class="${u===p.image?"active":""}"><img src="${u}" alt=""></button>`).join("")}</div></div>
         <div class="form-group full"><div class="checkbox-grid"><label><input type="checkbox" name="featured" ${p.featured?"checked":""}> ${t("featuredProduct")}</label><label><input type="checkbox" name="isNew" ${p.isNew?"checked":""}> ${t("newProduct")}</label><label><input type="checkbox" name="onSale" ${p.compareAt>p.price?"checked":""}> ${t("saleProduct")}</label></div></div>
 
