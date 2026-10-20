@@ -690,7 +690,7 @@
           </div>
         </div>
         <div class="trust-strip">
-          <div><strong>58</strong><span>${t("wilaya")}</span></div>
+          <div><strong>${wilayas.length}</strong><span>${t("wilaya")}</span></div>
           <div><strong>${categories.length-1}</strong><span>${t("categories")}</span></div>
           <div><strong>24h</strong><span>${t("support")}</span></div>
           <div><strong>DA</strong><span>${t("delivery")}</span></div>
@@ -1034,7 +1034,7 @@
     }
     function adminDelivery(){
       const list=wilayas.filter(w=>(lang==="ar"?w.ar:w.fr).toLowerCase().includes(deliverySearch.toLowerCase()));
-      return `<div class="admin-head"><div><h1>${t("deliverySettings")}</h1><p>58 ${t("wilaya")}</p></div></div>
+      return `<div class="admin-head"><div><h1>${t("deliverySettings")}</h1><p>${wilayas.length} ${t("wilaya")}</p></div></div>
         <form id="deliveryGlobalForm" class="admin-card" style="margin-bottom:15px"><h3>${t("globalDelivery")}</h3><div class="admin-form"><div class="form-group"><label class="form-label" for="freeShippingSetting">${t("freeShipping")} (DA)</label><input class="form-control" id="freeShippingSetting" name="freeShipping" type="number" value="${state.settings.freeShippingThreshold}"></div><div class="form-group" style="display:flex;align-items:end"><button class="btn btn-primary" type="submit">${t("save")}</button></div></div></form>
         <div class="admin-card"><div class="admin-head"><h3>${t("deliverySettings")}</h3><input class="form-control" style="max-width:230px" id="adminDeliverySearch" value="${esc(deliverySearch)}" placeholder="${t("search")||"Rechercher"}"></div><div class="table-wrap"><table class="admin-table"><thead><tr><th>${t("wilaya")}</th><th>${t("deliveryPrice")}</th><th>${t("relayFee")}</th><th>${t("relayAvailable")}</th><th>${t("commune")}</th><th></th></tr></thead><tbody id="deliveryTableBody">${deliveryTableRows(list)}</tbody></table></div></div>`;
     }
