@@ -512,6 +512,7 @@
 
     const STORAGE_KEY="sofi_shop_pro_v4";
     const CATALOG_VERSION=2;
+    const SERVER_PRODUCTS={{ server_products|tojson }};
     function loadState(){
       const base=defaultState();
       try{
@@ -522,7 +523,7 @@
         return {...base,...saved,settings:{...base.settings,...saved.settings,delivery},products:(saved.products?.length&&saved.catalogVersion===CATALOG_VERSION)?saved.products:base.products};
       }catch(e){return base}
     }
-    let state=loadState();state.catalogVersion=CATALOG_VERSION;
+    let state=loadState();state.catalogVersion=CATALOG_VERSION;if(Array.isArray(SERVER_PRODUCTS)&&SERVER_PRODUCTS.length)state.products=SERVER_PRODUCTS;
     let lang=state.settings.language||"fr";
     let appliedCoupon="";
     let cartWilaya="",cartMethod="home";
@@ -1161,7 +1162,7 @@
       if(e.target.closest("[data-add-product]")){openProductEditor();return}
       const editProduct=e.target.closest("[data-edit-product]");if(editProduct){openProductEditor(editProduct.dataset.editProduct);return}
       const deleteProduct=e.target.closest("[data-delete-product]");
-      if(deleteProduct&&await confirmDialog(t("confirmDelete"),t("confirmDeleteText"))){state.products=state.products.filter(p=>p.id!==deleteProduct.dataset.deleteProduct);state.cart=state.cart.filter(l=>l.productId!==deleteProduct.dataset.deleteProduct);persist();renderAdminMain();renderCartDrawer();toast(t("deleteSuccess"));return}
+      if(deleteProduct&&await confirmDialog(t("confirmDelete"),t("confirmDeleteText"))){const _pid=deleteProduct.dataset.deleteProduct;fetch("/api/admin/products/"+encodeURIComponent(_pid),{method:"DELETE"}).then(r=>{if(!r.ok)throw 0;state.products=state.products.filter(p=>p.id!==_pid);state.cart=state.cart.filter(l=>l.productId!==_pid);persist();renderAdminMain();renderCartDrawer();toast(t("deleteSuccess"))}).catch(()=>toast("Suppression impossible","error"));return}
       const viewOrder=e.target.closest("[data-view-order]");if(viewOrder){openOrderDetails(viewOrder.dataset.viewOrder);return}
       const editDelivery=e.target.closest("[data-edit-delivery]");if(editDelivery){openDeliveryEditor(editDelivery.dataset.editDelivery);return}
       const clientSegment=e.target.closest("[data-client-segment]");if(clientSegment){clientSegment=clientSegment.dataset.clientSegment;renderAdminMain();return}
@@ -1242,7 +1243,7 @@
       if(id==="productEditorForm"){
         const existingId=fd.get("id");
         const item={id:existingId||"p_"+Date.now(),name:{fr:fd.get("name_fr"),ar:fd.get("name_ar"),en:fd.get("name_en")},brand:fd.get("brand"),category:fd.get("category"),desc:{fr:fd.get("desc_fr"),ar:fd.get("desc_ar"),en:fd.get("desc_en")},price:Number(fd.get("price")),compareAt:Number(fd.get("compareAt")||0),stock:Number(fd.get("stock")),image:fd.get("image"),featured:fd.has("featured"),isNew:fd.has("isNew"),rating:existingId?state.products.find(p=>p.id===existingId)?.rating||5:5,reviews:existingId?state.products.find(p=>p.id===existingId)?.reviews||0:0,demo:true};
-        if(existingId)state.products=state.products.map(p=>p.id===existingId?item:p);else state.products.unshift(item);persist();closeModal();renderAdminMain();toast(t("newProductsSaved"));return;
+        const _isEdit=!!existingId;fetch("/api/admin/products"+(_isEdit?"/"+encodeURIComponent(existingId):""),{method:_isEdit?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(item)}).then(r=>r.json().then(j=>({ok:r.ok,j:j}))).then(res=>{if(!res.ok){toast(res.j.error||"Enregistrement impossible","error");return}const sv=res.j.product||item;if(_isEdit)state.products=state.products.map(p=>p.id===existingId?sv:p);else state.products.unshift(sv);persist();closeModal();renderAdminMain();toast(t("newProductsSaved"))}).catch(()=>toast("Connexion au serveur impossible","error"));return;
       }
       if(id==="promotionForm"){
         state.promos.push({id:"promo_"+Date.now(),code:String(fd.get("code")).toUpperCase(),type:fd.get("type"),value:Number(fd.get("value")),min:Number(fd.get("min")||0),maxDiscount:Number(fd.get("max")||0),active:true});persist();form.reset();renderAdminMain();toast(t("saveSuccess"));return;

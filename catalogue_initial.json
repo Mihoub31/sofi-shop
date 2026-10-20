@@ -1,0 +1,438 @@
+[
+ {
+  "id": "p1",
+  "name": {
+   "fr": "Rouge à lèvres Velours",
+   "ar": "أحمر شفاه مخملي",
+   "en": "Velvet Lipstick"
+  },
+  "brand": "Maison SOFI",
+  "category": "maquillage",
+  "desc": {
+   "fr": "Finition veloutée, confort longue durée et pigments intensifs.",
+   "ar": "لمسة مخملية مريحة بألوان غنية وثبات طويل.",
+   "en": "Velvet finish, lasting comfort and rich pigments."
+  },
+  "price": 1000,
+  "compareAt": 1300,
+  "stock": 34,
+  "image": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.9,
+  "reviews": 84,
+  "featured": true,
+  "isNew": false
+ },
+ {
+  "id": "p2",
+  "name": {
+   "fr": "Fond de teint Péarla",
+   "ar": "كريم أساس بيرل",
+   "en": "Pearly Foundation"
+  },
+  "brand": "Luma",
+  "category": "maquillage",
+  "desc": {
+   "fr": "Couvrance modulable et fini naturel pour tous les types de peau.",
+   "ar": "تغطية قابلة للتعديل ولمسة طبيعية لكل أنواع البشرة.",
+   "en": "Buildable coverage and a natural finish for every skin type."
+  },
+  "price": 3200,
+  "compareAt": 3700,
+  "stock": 19,
+  "image": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.8,
+  "reviews": 62,
+  "featured": true,
+  "isNew": false
+ },
+ {
+  "id": "p3",
+  "name": {
+   "fr": "Palette Rose Horizon",
+   "ar": "بالت وردية أفق",
+   "en": "Rose Horizon Palette"
+  },
+  "brand": "Aura",
+  "category": "maquillage",
+  "desc": {
+   "fr": "Douze teintes rosées faciles à superposer du matin au soir.",
+   "ar": "اثنتا عشرة درجة وردية سهلة للخلط من الصباح إلى المساء.",
+   "en": "Twelve easy-to-blend rosy shades from morning to evening."
+  },
+  "price": 5400,
+  "compareAt": 6200,
+  "stock": 11,
+  "image": "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.7,
+  "reviews": 41,
+  "featured": true,
+  "isNew": true
+ },
+ {
+  "id": "p4",
+  "name": {
+   "fr": "Mascara Courbe Intense",
+   "ar": "ماسكارا منحنية",
+   "en": "Intense Curved Mascara"
+  },
+  "brand": "Luma",
+  "category": "maquillage",
+  "desc": {
+   "fr": "Brosses courbes et volume，我没看到的 intensifié dès la première passe.",
+   "ar": "فرشاة منحنية وحجم مكثف من أول مرة.",
+   "en": "Curved bristles and intense volume from the first stroke."
+  },
+  "price": 1800,
+  "compareAt": 0,
+  "stock": 42,
+  "image": "https://images.unsplash.com/photo-1631214524020-3c5b2f90aaff?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.6,
+  "reviews": 28,
+  "featured": false,
+  "isNew": true
+ },
+ {
+  "id": "p5",
+  "name": {
+   "fr": "Blush Nuage Rosé",
+   "ar": " blush وردي سحابي",
+   "en": "Rosy Cloud Blush"
+  },
+  "brand": "Maison SOFI",
+  "category": "maquillage",
+  "desc": {
+   "fr": "Poudre ultra-fine pour un effet rosé naturel et lumineux.",
+   "ar": "بودرة فائقة النعومة لإطلالة وردية طبيعية ومضيئة.",
+   "en": "Ultra-fine powder for a natural, luminous rosy look."
+  },
+  "price": 1700,
+  "compareAt": 2100,
+  "stock": 27,
+  "image": "https://images.unsplash.com/photo-1596704017254-9b121068fb31?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.7,
+  "reviews": 35,
+  "featured": false,
+  "isNew": false
+ },
+ {
+  "id": "p6",
+  "name": {
+   "fr": "Sérum Éclat Vitamine C",
+   "ar": "سيروم فيتامين سي",
+   "en": "Vitamin C Glow Serum"
+  },
+  "brand": "GlowLab",
+  "category": "cremes-serums",
+  "desc": {
+   "fr": "Concentré illuminateur pour une peau visiblement plus éclatante.",
+   "ar": "مركز مضيء لبشرة تبدو أكثر إشراقاً بوضوح.",
+   "en": "Illuminating concentrate for visibly brighter-looking skin."
+  },
+  "price": 3900,
+  "compareAt": 4500,
+  "stock": 16,
+  "image": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.9,
+  "reviews": 73,
+  "featured": true,
+  "isNew": false
+ },
+ {
+  "id": "p7",
+  "name": {
+   "fr": "Crème Céramide Douce",
+   "ar": "كريم سيراميد لطيف",
+   "en": "Gentle Ceramide Cream"
+  },
+  "brand": "Derma",
+  "category": "soins-visage",
+  "desc": {
+   "fr": "Hydratation 24 heures pour une peau souple et apaisée.",
+   "ar": "ترطيب 24 ساعة لبشرة ناعمة ومهدئة.",
+   "en": "24-hour hydration for soft, comfortable skin."
+  },
+  "price": 3200,
+  "compareAt": 0,
+  "stock": 23,
+  "image": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.8,
+  "reviews": 57,
+  "featured": false,
+  "isNew": true
+ },
+ {
+  "id": "p8",
+  "name": {
+   "fr": "Nettoyant Doux Visage",
+   "ar": "غسول وجه لطيف",
+   "en": "Gentle Face Cleanser"
+  },
+  "brand": "Derma",
+  "category": "hygiene-beaute",
+  "desc": {
+   "fr": "Formule sans savon pour un nettoyage confortable quotidien.",
+   "ar": "formula بدون صابون لتنظيف يومي مريح.",
+   "en": "Soap-free formula for comfortable daily cleansing."
+  },
+  "price": 2200,
+  "compareAt": 0,
+  "stock": 48,
+  "image": "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.7,
+  "reviews": 45,
+  "featured": false,
+  "isNew": false
+ },
+ {
+  "id": "p9",
+  "name": {
+   "fr": "Lait Corporel Satin",
+   "ar": "ماء جسم ساتان",
+   "en": "Satin Body Lotion"
+  },
+  "brand": "PureSkin",
+  "category": "soins-corps",
+  "desc": {
+   "fr": "Texture fondante, parfum discret et hydratation immédiate.",
+   "ar": "قوام ذائب ورائحة خفيفة وترطيب فوري.",
+   "en": "Melting texture, subtle scent and immediate hydration."
+  },
+  "price": 2400,
+  "compareAt": 2800,
+  "stock": 31,
+  "image": "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.8,
+  "reviews": 39,
+  "featured": false,
+  "isNew": false
+ },
+ {
+  "id": "p10",
+  "name": {
+   "fr": "Gel Douche Jardin Blanc",
+   "ar": "جل دوش الحديقة البيضاء",
+   "en": "White Garden Shower Gel"
+  },
+  "brand": "PureSkin",
+  "category": "hygiene-beaute",
+  "desc": {
+   "fr": "Mousse sensorielle et notes fraîches de fleur d'oranger.",
+   "ar": "رغوة حسية بعبير زهر البرتقال منعش.",
+   "en": "Sensory foam with refreshing orange blossom notes."
+  },
+  "price": 1500,
+  "compareAt": 1900,
+  "stock": 61,
+  "image": "https://images.unsplash.com/photo-1601612628452-9e99ced43524?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.6,
+  "reviews": 31,
+  "featured": false,
+  "isNew": false
+ },
+ {
+  "id": "p11",
+  "name": {
+   "fr": "Shampoing Arginine Fortifiant",
+   "ar": "شامبو أرجينين مقوي",
+   "en": "Strengthening Arginine Shampoo"
+  },
+  "brand": "HairLab",
+  "category": "soins-cheveux",
+  "desc": {
+   "fr": "Aide à renforcer les cheveux fragiles et fragiles.",
+   "ar": "يساعد على تقوية الشعر الضعيف.",
+   "en": "Helps strengthen fragile hair."
+  },
+  "price": 2600,
+  "compareAt": 0,
+  "stock": 26,
+  "image": "https://images.unsplash.com/photo-1631729371254-42c2892f0e6e?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.7,
+  "reviews": 33,
+  "featured": false,
+  "isNew": true
+ },
+ {
+  "id": "p12",
+  "name": {
+   "fr": "Masque Cheveux Réparateur",
+   "ar": "قناع شعر ترميمي",
+   "en": "Repairing Hair Mask"
+  },
+  "brand": "HairLab",
+  "category": "soins-cheveux",
+  "desc": {
+   "fr": "Texture riche pour retrouver souplesse et brillance.",
+   "ar": "قوام غني لاستعادة نعومة ولمعان الشعر.",
+   "en": "Rich texture that restores softness and shine."
+  },
+  "price": 1900,
+  "compareAt": 2200,
+  "stock": 38,
+  "image": "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.8,
+  "reviews": 49,
+  "featured": false,
+  "isNew": false
+ },
+ {
+  "id": "p13",
+  "name": {
+   "fr": "Parfum Rose Nuit",
+   "ar": "عطر وردة ليلية",
+   "en": "Rose Nuit Perfume"
+  },
+  "brand": "Maison SOFI",
+  "category": "parfums-brumes",
+  "desc": {
+   "fr": "Eau de parfum floral et boisée au sillage élégant.",
+   "ar": "عطر زهري خشبي أنيق.",
+   "en": "Elegant floral and woody eau de parfum."
+  },
+  "price": 6800,
+  "compareAt": 7800,
+  "stock": 9,
+  "image": "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.9,
+  "reviews": 67,
+  "featured": true,
+  "isNew": false
+ },
+ {
+  "id": "p14",
+  "name": {
+   "fr": "Brume Botanique Éveil",
+   "ar": "بخخة نباتية منعشة",
+   "en": "Botanical Awakening Mist"
+  },
+  "brand": "Botanica",
+  "category": "parfums-brumes",
+  "desc": {
+   "fr": "Brume légère à l'alcéa pour un éclat immédiat.",
+   "ar": "بخخة خفيفة بزهرة الخزامى لبهاء فوري.",
+   "en": "Lightweight mallow mist for an instant glow."
+  },
+  "price": 1800,
+  "compareAt": 2200,
+  "stock": 44,
+  "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.6,
+  "reviews": 26,
+  "featured": false,
+  "isNew": true
+ },
+ {
+  "id": "p15",
+  "name": {
+   "fr": "Brosse Kabuki Douce",
+   "ar": "فرشاة كابوكي ناعمة",
+   "en": "Soft Kabuki Brush"
+  },
+  "brand": "SOFI Tools",
+  "category": "accessoires",
+  "desc": {
+   "fr": "Poils synthétiques doux pour un fond de teint impeccable.",
+   "ar": "شعيرات صناعية ناعمة لتغطية متقنة.",
+   "en": "Soft synthetic bristles for an even foundation finish."
+  },
+  "price": 1200,
+  "compareAt": 1500,
+  "stock": 53,
+  "image": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.7,
+  "reviews": 22,
+  "featured": false,
+  "isNew": false
+ },
+ {
+  "id": "p16",
+  "name": {
+   "fr": "Coffret Découverte SOFI",
+   "ar": "علية اكتشاف SOFI",
+   "en": "SOFI Discovery Set"
+  },
+  "brand": "Maison SOFI",
+  "category": "coffrets",
+  "desc": {
+   "fr": "Cinq essentiels de beauté dans un écrin prêt à offrir.",
+   "ar": "خمسة essentials de beauté dans un écrin prêt à offrir.",
+   "en": "Five beauty essentials in a ready-to-gift case."
+  },
+  "price": 7900,
+  "compareAt": 9800,
+  "stock": 7,
+  "image": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=900&q=85",
+  "rating": 5,
+  "reviews": 54,
+  "featured": true,
+  "isNew": true
+ },
+ {
+  "id": "p17",
+  "name": {
+   "fr": "Crème Mains Néroli",
+   "ar": "كريم يدين بالنيرولي",
+   "en": "Neroli Hand Cream"
+  },
+  "brand": "Botanica",
+  "category": "soins-corps",
+  "desc": {
+   "fr": "Texture rapidly absorbed, parfum solaire et peau douce.",
+   "ar": "قوام سريع الامتصاص ورائحة شمسية.",
+   "en": "Fast-absorbing texture, sunny scent and soft hands."
+  },
+  "price": 950,
+  "compareAt": 1200,
+  "stock": 67,
+  "image": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.6,
+  "reviews": 18,
+  "featured": false,
+  "isNew": false
+ },
+ {
+  "id": "p18",
+  "name": {
+   "fr": "Trousse Beauté Rose",
+   "ar": "حقيبة وردية",
+   "en": "Rose Beauty Pouch"
+  },
+  "brand": "SOFI Tools",
+  "category": "accessoires",
+  "desc": {
+   "fr": "Format compact et doublure douce pour organiser vos essentiels.",
+   "ar": "حجم م-compact وبطانة ناعمة لتنظيم مستحضراتك.",
+   "en": "Compact format with a soft lining to organise your essentials."
+  },
+  "price": 1500,
+  "compareAt": 0,
+  "stock": 29,
+  "image": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=85",
+  "rating": 4.5,
+  "reviews": 16,
+  "featured": false,
+  "isNew": true
+ },
+ {
+  "id": "p19",
+  "name": {
+   "fr": "Retinol B3 Sérum 30 ml",
+   "ar": "Retinol B3 Sérum 30 ml",
+   "en": "Retinol B3 Serum 30 ml"
+  },
+  "brand": "La Roche-Posay",
+  "category": "cremes-serums",
+  "desc": {
+   "fr": "Sérum anti-rides et anti-taches pour une peau plus lisse et plus uniforme.",
+   "ar": "Sérum anti-rides et anti-taches pour une peau plus lisse et plus uniforme.",
+   "en": "Anti-wrinkle and anti-dark-spot serum for smoother, more even skin."
+  },
+  "price": 1100,
+  "stock": 10,
+  "image": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=900&q=85",
+  "rating": 0,
+  "reviews": 0,
+  "featured": false,
+  "isNew": true
+ }
+]
