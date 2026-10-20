@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
+<script>try{var __m=localStorage.getItem("sofi_theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",__m)}catch(e){}</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#c87588">
@@ -280,7 +281,17 @@
     @media(max-width:780px){.container{width:min(calc(100% - 28px),var(--container))}.announcement .container{justify-content:center}.announcement .demo{display:none}.header-inner{min-height:68px;grid-template-columns:auto 1fr auto;gap:10px}.header-search{display:none}.brand-name{font-size:24px}.brand small{font-size:8px}.header-actions{justify-content:flex-end}.header-actions .lang-select{max-width:60px}.hero{padding-top:20px}.hero-card{grid-template-columns:1fr;min-height:auto}.hero-copy{padding:48px 28px 35px}.hero-copy h1{font-size:55px}.hero-visual{min-height:430px}.hero-image{width:82%;height:90%;inset-inline-end:9%}.floating-top{inset-inline-start:3%}.floating-bottom{inset-inline-end:3%}.trust-strip{grid-template-columns:1fr 1fr}.section{padding:55px 0}.product-grid{grid-template-columns:repeat(2,1fr)}.category-grid{grid-template-columns:repeat(3,1fr)}.section-head{align-items:start}.section-head .btn{display:none}.promo-banner{grid-template-columns:1fr}.promo-copy{padding:37px}.promo-copy h2{font-size:39px}.promo-visual{min-height:280px}.wholesale-cta{grid-template-columns:1fr;padding:38px}.wholesale-cta h2{font-size:39px}.benefits{grid-template-columns:1fr 1fr}.contact-panel{padding:35px;flex-direction:column;align-items:start}.shop-hero{padding:28px;align-items:start;flex-direction:column}.shop-layout{grid-template-columns:1fr}.filter-panel{position:static}.shop-product-grid{grid-template-columns:repeat(2,1fr)}.wholesale-hero{padding:40px 27px}.wholesale-hero h1{font-size:46px}.wholesale-grid,.checkout-layout{grid-template-columns:1fr}.checkout-summary{position:static}.product-modal-grid{grid-template-columns:1fr}.product-modal-image{min-height:330px;max-height:430px}.order-details-grid{grid-template-columns:1fr}.admin-shell{grid-template-columns:1fr}.admin-sidebar{padding:17px}.admin-sidebar .brand small,.admin-sidebar-bottom{display:none}.admin-nav{display:flex;overflow:auto;margin-top:15px}.admin-nav button{white-space:nowrap}.admin-content{padding:20px 14px}.kpi-grid{grid-template-columns:1fr 1fr}.admin-grid-2{grid-template-columns:1fr}.admin-form{grid-template-columns:1fr}.admin-form .full{grid-column:auto}.footer-grid{grid-template-columns:1fr 1fr}.footer-grid>div:first-child,.footer-grid>div:last-child{grid-column:1/-1}}
     @media(max-width:520px){.container{width:calc(100% - 24px)}.icon-btn{width:36px;height:36px}.header-actions{gap:0}.lang-select{font-size:9px}.hero-copy h1{font-size:46px}.hero-copy{padding:42px 23px 28px}.hero-visual{min-height:340px}.hero-trust{gap:10px}.hero-trust span{font-size:8px}.product-grid,.shop-product-grid{grid-template-columns:1fr}.product-image{aspect-ratio:1.08}.category-grid{grid-template-columns:1fr 1fr}.category-card{aspect-ratio:.95}.benefits{grid-template-columns:1fr}.wholesale-list{grid-template-columns:1fr}.contact-panel h2{font-size:35px}.form-grid{grid-template-columns:1fr}.form-group.full{grid-column:auto}.cart-item{grid-template-columns:64px 1fr}.cart-item img{width:64px;height:76px}.cart-item-side{grid-column:2;text-align:start}.modal-overlay{padding:8px}.modal{max-height:96vh;border-radius:18px}.modal-body{padding:18px}.product-modal-info h2{font-size:34px}.order-steps{overflow-x:auto;justify-content:flex-start}.order-step{min-width:95px}.kpi-grid{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr}.footer-grid>div:first-child,.footer-grid>div:last-child{grid-column:auto}.footer-bottom{flex-direction:column}.image-gallery{grid-template-columns:repeat(4,1fr)}.tier-editor-row{grid-template-columns:1fr 1fr 32px}.form-grid{gap:12px}}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
-  </style>
+  
+/* ===== Thème sombre ===== */
+[data-theme="dark"]{color-scheme:dark;--pink-50:#2b2226;--pink-100:#3b2b32;--pink-200:#5b3d48;--pink-300:#8d5a6b;--pink-400:#d98d9e;--pink-500:#d98298;--pink-700:#f2a9ba;--ivory:#1a1c20;--beige:#2d3137;--beige-dark:#3b4047;--gold:#d3ad66;--gold-dark:#e0bd7d;--ink:#f3ece8;--muted:#a99fa2;--success:#4cc38a;--danger:#f0707e;--warning:#e0a24a;--surface:#212529;--surface2:#14161a;--panel:#15171a;--shadow:0 18px 50px rgba(0,0,0,.5);--shadow-sm:0 8px 24px rgba(0,0,0,.4)}
+[data-theme="dark"] body{background:#0f1114;color:var(--ink)}
+[data-theme="dark"] .hero-card{background:linear-gradient(135deg,#2a2025,#1f1c1e 55%,#262122)}
+[data-theme="dark"] .btn-danger,[data-theme="dark"] .badge-red{background:#3b2227}
+#themeToggle{position:fixed;inset-inline-start:14px;bottom:14px;z-index:60;width:44px;height:44px;border-radius:50%;border:1px solid var(--beige-dark);background:var(--ivory);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;box-shadow:var(--shadow-sm)}
+[data-theme="dark"] .category-menu-content,[data-theme="dark"] .header-search input,[data-theme="dark"] .mobile-menu,[data-theme="dark"] .btn-outline,[data-theme="dark"] .trust-strip div,[data-theme="dark"] .product-card,[data-theme="dark"] .product-image .badge,[data-theme="dark"] .category-card .arrow,[data-theme="dark"] .promo-offer,[data-theme="dark"] .benefit,[data-theme="dark"] .filter-panel,[data-theme="dark"] .filter-select,[data-theme="dark"] .form-control,[data-theme="dark"] .category-chip,[data-theme="dark"] .empty-state,[data-theme="dark"] .panel,[data-theme="dark"] .cart-drawer,[data-theme="dark"] .qty-control button,[data-theme="dark"] .delivery-mini select,[data-theme="dark"] .modal,[data-theme="dark"] .modal-header,[data-theme="dark"] .mode-tab.active,[data-theme="dark"] .checkout-panel,[data-theme="dark"] .order-detail-box,[data-theme="dark"] .admin-shell,[data-theme="dark"] .admin-card,[data-theme="dark"] .table-actions button,[data-theme="dark"] .admin-tab,[data-theme="dark"] .status-select,[data-theme="dark"] .admin-lock,[data-theme="dark"] .no-results{background:var(--surface)}
+[data-theme="dark"] .btn-danger,[data-theme="dark"] .badge-gold,[data-theme="dark"] .badge-green,[data-theme="dark"] .badge-red,[data-theme="dark"] .confirmation-icon,[data-theme="dark"] .order-step i,[data-theme="dark"] .admin-page,[data-theme="dark"] .chart-track,[data-theme="dark"] .admin-table th,[data-theme="dark"] .tier-editor-row button,[data-theme="dark"] .status-pending,[data-theme="dark"] .status-confirmed,[data-theme="dark"] .status-prepared,[data-theme="dark"] .status-shipped,[data-theme="dark"] .status-delivered,[data-theme="dark"] .status-cancelled,[data-theme="dark"] .demo-ribbon{background:var(--surface2)}
+[data-theme="dark"] .announcement,[data-theme="dark"] .btn-dark,[data-theme="dark"] .wholesale-cta,[data-theme="dark"] .category-chip.active,[data-theme="dark"] .calculator-box,[data-theme="dark"] .admin-sidebar,[data-theme="dark"] .admin-tab.active,[data-theme="dark"] .toast{background:var(--panel)}
+</style>
 </head>
 <body>
   <div class="announcement">
@@ -1292,5 +1303,20 @@
     applyTranslations();renderCurrentPage();
   })();
   </script>
+<script>
+(function(){
+  var K="sofi_theme",r=document.documentElement;
+  var b=document.createElement("button");b.id="themeToggle";b.type="button";
+  function apply(m){
+    r.setAttribute("data-theme",m);
+    try{localStorage.setItem(K,m)}catch(e){}
+    b.textContent=m==="dark"?"\u2600\uFE0F":"\uD83C\uDF19";
+    b.setAttribute("aria-label",m==="dark"?"Mode clair":"Mode sombre");
+  }
+  b.onclick=function(){apply(r.getAttribute("data-theme")==="dark"?"light":"dark")};
+  document.body.appendChild(b);
+  apply(r.getAttribute("data-theme")||"light");
+})();
+</script>
 </body>
 </html>
