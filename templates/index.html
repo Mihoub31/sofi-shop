@@ -576,6 +576,8 @@
     let appliedCoupon="";
     let cartWilaya="",cartMethod="home";
     let checkoutWilaya="",checkoutCommune="",checkoutMethod="home";
+    const deliveryCompanies=["Yalidine","ZR Express","Maystro Delivery","Noest Express","Procolis","Zimou Express","Anderson Delivery","DHD Express","Algérie Poste"];
+    let checkoutCompany="";
     let shopFilters={query:"",category:"",brand:"",availability:"",minPrice:"",maxPrice:"",sort:"featured"};
     let productModalState={id:null,mode:"retail",qty:1};
     let adminSession=false,adminTab="dashboard",customerPhone="",clientSegment="customers",deliverySearch="",adminOrderStatus="";
@@ -903,7 +905,8 @@
               <label class="radio-card"><input type="radio" name="delivery" value="home" ${checkoutMethod==="home"?"checked":""}><span><strong>${t("homeDelivery")}</strong><small>${d?money(d.home):t("selectWilaya")}</small></span></label>
               <label class="radio-card"><input type="radio" name="delivery" value="pickup" ${checkoutMethod==="pickup"?"checked":""} ${relayOK?"":"disabled"}><span><strong>${t("pickup")}</strong><small>${relayOK?money(d.relay):t("pickupUnavailable")}</small></span></label>
             </div></div>
-            <div class="form-group full"><label class="form-label">${t("payment")}</label><label class="radio-card"><input type="radio" name="payment" value="cod" checked ${state.settings.codEnabled?"":"disabled"}><span><strong>${t("cod")}</strong><small>${t("paymentCODNote")}</small></span></label><div class="radio-card" style="margin-top:9px;opacity:.55"><input type="radio" disabled><span><strong>${t("paymentSoon")}</strong></span></div></div>
+            <div class="form-group full"><label class="form-label" for="coCompany">Entreprise de livraison</label><select class="form-control" id="coCompany" name="company" required><option value="">Choisir…</option>${deliveryCompanies.map(c=>`<option value="${esc(c)}" ${checkoutCompany===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
+        <div class="form-group full"><label class="form-label">${t("payment")}</label><label class="radio-card"><input type="radio" name="payment" value="cod" checked ${state.settings.codEnabled?"":"disabled"}><span><strong>${t("cod")}</strong><small>${t("paymentCODNote")}</small></span></label><div class="radio-card" style="margin-top:9px;opacity:.55"><input type="radio" disabled><span><strong>${t("paymentSoon")}</strong></span></div></div>
             <div class="form-group full"><label class="form-label" for="coNote">Message (optionnel)</label><textarea class="form-control" id="coNote" name="note" style="min-height:70px"></textarea></div>
             <div class="form-group full"><label class="checkbox-grid"><label><input type="checkbox" required> ${t("terms")}</label></label></div>
           </div></div>
@@ -940,7 +943,7 @@
       const totals=cartTotals(wilaya,method);
       const date=new Date(),stamp=`${String(date.getFullYear()).slice(-2)}${String(date.getMonth()+1).padStart(2,"0")}${String(date.getDate()).padStart(2,"0")}`;
       const ref=`SS-${stamp}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-      const order={id:"order_"+Date.now(),ref,createdAt:new Date().toISOString(),status:"pending",demo:false,customer:{name:fd.get("name"),phone:fd.get("phone"),email:"",wilaya,commune:fd.get("commune"),address:fd.get("address"),note:fd.get("note")||""},delivery:{method,fee:totals.shipping},payment,items:state.cart.map(l=>{const p=state.products.find(x=>x.id===l.productId),u=unitPrice(p,l.mode,l.quantity);return{productId:p.id,name:tr(p),qty:l.quantity,mode:l.mode,unitPrice:u,retailPrice:p.price,total:u*l.quantity}}),totals};
+      const order={id:"order_"+Date.now(),ref,createdAt:new Date().toISOString(),status:"pending",demo:false,customer:{name:fd.get("name"),phone:fd.get("phone"),email:"",wilaya,commune:fd.get("commune"),address:fd.get("address"),note:fd.get("note")||""},delivery:{method,fee:totals.shipping,company:fd.get("company")||""},payment,items:state.cart.map(l=>{const p=state.products.find(x=>x.id===l.productId),u=unitPrice(p,l.mode,l.quantity);return{productId:p.id,name:tr(p),qty:l.quantity,mode:l.mode,unitPrice:u,retailPrice:p.price,total:u*l.quantity}}),totals};
       try{
         const response=await fetch("/api/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
         const result=await response.json().catch(()=>({}));
@@ -1103,7 +1106,7 @@
 
     function openOrderDetails(id){
       const o=state.orders.find(x=>x.id===id);if(!o)return;
-      const body=`<div class="order-details-grid" style="margin-top:0"><div class="order-detail-box"><h3>${t("orderCustomerInfo")}</h3><p><strong>${esc(o.customer.name)}</strong><br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}<br>${esc(o.customer.commune)}</p></div><div class="order-detail-box"><h3>${t("status")}</h3><select class="status-select" data-order-status="${o.id}">${["pending","confirmed","prepared","shipped","delivered","cancelled"].map(s=>`<option value="${s}" ${o.status===s?"selected":""}>${t(s)}</option>`).join("")}</select><p style="margin-top:12px">${t("orderNumber")}: ${esc(o.ref)}<br>${new Date(o.createdAt).toLocaleString()}<br>${t("deliveryFee")}: ${money(o.delivery.fee)}</p></div></div><div class="admin-card" style="margin-top:14px"><h3>${t("items")}</h3>${o.items.map(i=>`<div class="summary-line"><span>${esc(i.name)} × ${i.qty} · ${i.mode}</span><strong>${money(i.total)}</strong></div>`).join("")}<div class="summary-line total"><span>${t("grandTotal")}</span><strong>${money(o.totals.total)}</strong></div></div>`;
+      const body=`<div class="order-details-grid" style="margin-top:0"><div class="order-detail-box"><h3>${t("orderCustomerInfo")}</h3><p><strong>${esc(o.customer.name)}</strong><br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}<br>${esc(o.customer.commune)}</p></div><div class="order-detail-box"><h3>${t("status")}</h3><select class="status-select" data-order-status="${o.id}">${["pending","confirmed","prepared","shipped","delivered","cancelled"].map(s=>`<option value="${s}" ${o.status===s?"selected":""}>${t(s)}</option>`).join("")}</select><p style="margin-top:12px">${t("orderNumber")}: ${esc(o.ref)}<br>${new Date(o.createdAt).toLocaleString()}<br>${t("deliveryFee")}: ${money(o.delivery.fee)}<br>Livraison : ${esc(o.delivery.company||"—")}</p></div></div><div class="admin-card" style="margin-top:14px"><h3>${t("items")}</h3>${o.items.map(i=>`<div class="summary-line"><span>${esc(i.name)} × ${i.qty} · ${i.mode}</span><strong>${money(i.total)}</strong></div>`).join("")}<div class="summary-line total"><span>${t("grandTotal")}</span><strong>${money(o.totals.total)}</strong></div></div>`;
       showModal(t("orderDetails"),body,`<button class="btn btn-primary" data-modal-close>${t("close")}</button>`,"lg");
     }
     function openDeliveryEditor(code){
@@ -1265,7 +1268,7 @@
       if(e.target.id==="cartWilaya"){cartWilaya=e.target.value;renderCartDrawer()}
       if(e.target.id==="cartMethod"){cartMethod=e.target.value;renderCartDrawer()}
       if(e.target.id==="coWilaya"){updateCheckoutCommunes()}
-      if(e.target.name==="delivery"){checkoutMethod=e.target.value;updateCheckoutSummary()}
+      if(e.target.name==="delivery"){checkoutMethod=e.target.value;updateCheckoutSummary()}if(e.target.name==="company"){checkoutCompany=e.target.value}
 
       if(e.target.id==="adminOrderStatus"){adminOrderStatus=e.target.value;renderAdminMain()}
       if(e.target.dataset.orderStatus){const o=state.orders.find(x=>x.id===e.target.dataset.orderStatus);if(o){o.status=e.target.value;fetch("/api/admin/orders/"+encodeURIComponent(o.id)+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:o.status})}).then(r=>{if(!r.ok)toast("Statut non enregistré","error")}).catch(()=>toast("Statut non enregistré","error"));persist();toast(t("saveSuccess"));renderAdminMain()}}
