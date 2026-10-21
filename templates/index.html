@@ -333,6 +333,18 @@
 .pack-gift{display:inline-block;font-size:.9em;animation:packBounce 2.2s ease-in-out infinite;transform-origin:50% 90%}
 @keyframes packBounce{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-6px) rotate(-8deg)}60%{transform:translateY(-3px) rotate(6deg)}}
 @media (prefers-reduced-motion:reduce){.pack-gift{animation:none}}
+
+/* ===== Animations photos ===== */
+.hero-image{animation:heroFloat 6s ease-in-out infinite}
+.floating-card{animation:heroFloat2 5s ease-in-out infinite}
+.floating-bottom{animation-delay:1.2s}
+@keyframes heroFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.02)}}
+@keyframes heroFloat2{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.product-image img{transition:transform .7s ease}
+.product-card:hover .product-image img,.product-card:active .product-image img{transform:scale(1.08)}
+.pc-reveal{opacity:0;transform:translateY(26px);transition:opacity .6s ease,transform .6s ease}
+.pc-reveal.pc-in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.hero-image,.floating-card{animation:none}.pc-reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
 <body>
@@ -1401,6 +1413,23 @@
   b.onclick=function(){apply(r.getAttribute("data-theme")==="dark"?"light":"dark")};
   document.body.appendChild(b);
   apply(r.getAttribute("data-theme")||"light");
+})();
+</script>
+<script>
+(function(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches||!("IntersectionObserver" in window))return;
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(!e.isIntersecting)return;
+    var el=e.target;io.unobserve(el);el.classList.add("pc-in");
+    setTimeout(function(){el.classList.remove("pc-reveal","pc-in");el.style.transitionDelay=""},900);
+  })},{threshold:.12});
+  var n=0;
+  function scan(){document.querySelectorAll(".product-card:not([data-rv])").forEach(function(el){
+    el.setAttribute("data-rv","1");el.classList.add("pc-reveal");
+    el.style.transitionDelay=((n++)%4)*90+"ms";io.observe(el);
+  })}
+  new MutationObserver(function(){n=0;scan()}).observe(document.body,{childList:true,subtree:true});
+  scan();
 })();
 </script>
 </body>
