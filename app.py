@@ -201,7 +201,24 @@ def save_order():
             c.execute(
                 "INSERT INTO orders_v2 (id, ref, created_at, status, data) VALUES (%s, %s, %s, 'pending', %s)",
                 (order_id, ref, created_at, Jsonb(order)))
+            need = {}
+            for pid, _n, qty, _p, _t in clean_items:
+                if pid:
+                    need[pid] = need.get(pid, 0) + qty
+            for pid, qty in need.items():
+                row = c.execute(
+                    "SELECT (data->>'stock')::numeric AS s FROM products WHERE id = %s FOR UPDATE",
+                    (pid,)).fetchone()
+                if row is None:
+                    continue
+                if row["s"] is None or row["s"] < qty:
+                    raise _OutOfStock()
+                c.execute(
+                    "UPDATE products SET data = jsonb_set(data, '{stock}', to_jsonb((data->>'stock')::int - %s)) WHERE id = %s",
+                    (qty, pid))
         return jsonify({"ok": True, "id": order_id, "ref": ref}), 201
+    except _OutOfStock:
+        return jsonify({"error": "Stock insuffisant pour un des articles"}), 409
     except psycopg.errors.UniqueViolation:
         return jsonify({"error": "Commande déjà enregistrée"}), 409
     except Exception:
@@ -523,6 +540,10 @@ def api_admin_order_status(oid):
     except Exception:
         app.logger.exception("Statut commande")
         return jsonify({"error": "Erreur serveur"}), 500
+
+class _OutOfStock(Exception):
+    pass
+
 
 # ===== Fin produits =====
 
