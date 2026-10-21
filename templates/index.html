@@ -1391,6 +1391,18 @@
 
     document.addEventListener("error",e=>{if(e.target.tagName==="IMG"&&!e.target.dataset.fallback){e.target.dataset.fallback="1";e.target.src=placeholderImage}},true);
     window.addEventListener("hashchange",()=>{renderCurrentPage();window.scrollTo({top:0,behavior:"smooth"})});
+    /* cartCloseSafety */
+    document.addEventListener("click",function(e){
+      var d=document.getElementById("cartDrawer");
+      if(!d||!d.classList.contains("open"))return;
+      var b=d.querySelector("[data-cart-close]");
+      var hit=e.target.id==="cartOverlay"||(e.target.closest&&e.target.closest("[data-cart-close]"));
+      if(!hit&&b){
+        var r=b.getBoundingClientRect();
+        hit=e.clientX>=r.left-6&&e.clientX<=r.right+6&&e.clientY>=r.top-6&&e.clientY<=r.bottom+6;
+      }
+      if(hit){e.stopPropagation();closeCart()}
+    },true);
     document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeCart()}});
 
     document.getElementById("currentYear").textContent=new Date().getFullYear();
