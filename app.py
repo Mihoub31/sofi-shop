@@ -165,7 +165,23 @@ def save_order():
         reported_total = float(totals.get("total"))
         if not math.isfinite(fee) or not math.isfinite(reported_total) or fee < 0:
             raise ValueError()
-        if abs(reported_total - (subtotal + fee)) > 0.02:
+        pack_qty, pack_sum, pack_max = 0, 0.0, 0.0
+        for it in items:
+            if it.get("mode") == "pack":
+                q = it["qty"]
+                pr = float(it["unitPrice"])
+                pack_qty += q
+                pack_sum += pr * q
+                pack_max = max(pack_max, pr)
+        rate = 0.30 if pack_max <= 1000 else 0.25 if pack_max <= 5000 else 0.20
+        pack_disc = round(pack_sum * rate, 2) if pack_qty >= 3 else 0.0
+        reported_pack = float(totals.get("packDiscount") or 0)
+        if abs(reported_pack - pack_disc) > 0.02:
+            return jsonify({"error": "Remise pack incorrecte"}), 400
+        coupon = float(totals.get("couponDiscount") or 0)
+        if not math.isfinite(coupon) or coupon < 0 or coupon > subtotal - pack_disc + 0.02:
+            return jsonify({"error": "Remise invalide"}), 400
+        if abs(reported_total - (subtotal - pack_disc - coupon + fee)) > 0.02:
             return jsonify({"error": "Total incohérent"}), 400
     except (TypeError, ValueError, OverflowError):
         return jsonify({"error": "Montants invalides"}), 400
