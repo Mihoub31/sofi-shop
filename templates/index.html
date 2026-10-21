@@ -867,6 +867,12 @@
     }
     function removeCartLine(id,mode){state.cart=state.cart.filter(l=>!(l.productId===id&&l.mode===mode));persist();renderCartDrawer();updateHeaderBadges()}
     function couponDefinition(code){return state.promos.find(p=>p.active&&p.code.toUpperCase()===String(code||"").trim().toUpperCase())}
+    var PACK_T={
+fr:{offer:"Offre spéciale",title:"Crée ton Pack",desc:"Choisis au moins 3 articles et profite d'une remise sur le total : <strong>30 %</strong> si chaque article coûte 1 000 DA ou moins, <strong>25 %</strong> si le plus cher est entre 1 000 et 5 000 DA, <strong>20 %</strong> au-dessus de 5 000 DA.",compose:"Composer mon pack",more:"Encore {n} article(s)",min3:"3 articles minimum",items:"Articles",total:"Total",discount:"Remise",packTotal:"Total du pack",addPack:"Ajouter le pack au panier",min3toast:"Choisissez au moins 3 articles",packLine:"Remise Pack",company:"Entreprise de livraison",choose:"Choisir…"},
+ar:{offer:"عرض خاص",title:"صمّم باقتك",desc:"اختر 3 منتجات على الأقل واستفد من خصم على المجموع: <strong>30%</strong> إذا كان سعر كل منتج 1000 DA أو أقل، <strong>25%</strong> إذا كان أغلى منتج بين 1000 و5000 DA، <strong>20%</strong> فوق 5000 DA.",compose:"ابدأ تكوين باقتي",more:"بقي {n} منتج(ات)",min3:"3 منتجات على الأقل",items:"المنتجات",total:"المجموع",discount:"الخصم",packTotal:"مجموع الباقة",addPack:"أضف الباقة إلى السلة",min3toast:"اختر 3 منتجات على الأقل",packLine:"خصم الباقة",company:"شركة التوصيل",choose:"اختر…"},
+en:{offer:"Special offer",title:"Build your Pack",desc:"Pick at least 3 items and get a discount on the total: <strong>30%</strong> if every item costs 1,000 DA or less, <strong>25%</strong> if the priciest is between 1,000 and 5,000 DA, <strong>20%</strong> above 5,000 DA.",compose:"Build my pack",more:"{n} more item(s)",min3:"3 items minimum",items:"Items",total:"Total",discount:"Discount",packTotal:"Pack total",addPack:"Add pack to cart",min3toast:"Choose at least 3 items",packLine:"Pack discount",company:"Delivery company",choose:"Choose…"}
+};
+    function pt(k){return (PACK_T[lang]||PACK_T.fr)[k]||PACK_T.fr[k]}
     function packRate(maxPrice){return maxPrice<=1000?0.30:maxPrice<=5000?0.25:0.20}
     function packDiscountFor(cart){
       let qty=0,sum=0,max=0;
@@ -874,7 +880,7 @@
       return qty>=3?Math.round(sum*packRate(max)*100)/100:0;
     }
     var packSel={};
-    function packSectionHTML(){return `<section class="section-sm"><div class="container"><div style="border:1px solid var(--beige);background:var(--pink-50);border-radius:26px;padding:30px;display:grid;gap:14px;text-align:center"><span class="eyebrow" style="justify-content:center">Offre spéciale</span><h2 class="section-title"><span class="pack-gift" aria-hidden="true">🎁</span> Crée ton Pack <span aria-hidden="true">✨</span></h2><p class="muted" style="font-size:13px;max-width:600px;margin:0 auto">Choisis au moins 3 articles et profite d'une remise sur le total : <strong>30 %</strong> si chaque article coûte 1 000 DA ou moins, <strong>25 %</strong> si le plus cher est entre 1 000 et 5 000 DA, <strong>20 %</strong> au-dessus de 5 000 DA.</p><div><button class="btn btn-primary" type="button" data-pack-open>Composer mon pack</button></div></div></div></section>`}
+    function packSectionHTML(){return `<section class="section-sm"><div class="container"><div style="border:1px solid var(--beige);background:var(--pink-50);border-radius:26px;padding:30px;display:grid;gap:14px;text-align:center"><span class="eyebrow" style="justify-content:center">${pt("offer")}</span><h2 class="section-title"><span class="pack-gift" aria-hidden="true">🎁</span> ${pt("title")} <span aria-hidden="true">✨</span></h2><p class="muted" style="font-size:13px;max-width:600px;margin:0 auto">${pt("desc")}</p><div><button class="btn btn-primary" type="button" data-pack-open>${pt("compose")}</button></div></div></div></section>`}
     function renderHome(){return renderHomeBase().replace("</section>",m=>m+packSectionHTML())}
     function renderPackBuilder(){
       const box=document.getElementById("packBuilder");if(!box)return;
@@ -883,11 +889,11 @@
       items.forEach(p=>{const q=packSel[p.id]||0;if(q>0){qty+=q;sum+=q*Number(p.price);max=Math.max(max,Number(p.price))}});
       const ok=qty>=3,rate=packRate(max),disc=ok?Math.round(sum*rate*100)/100:0;
       const rows=items.map(p=>`<div class="summary-line" style="align-items:center;gap:10px"><img src="${safeImage(p.image)}" alt="" style="width:44px;height:44px;border-radius:10px;object-fit:cover"><span style="flex:1;font-size:12px">${esc(tr(p))}<br><small class="muted">${money(p.price)}</small></span><span style="display:flex;align-items:center;gap:8px"><button type="button" class="btn btn-outline btn-sm" data-pack-dec="${esc(p.id)}">−</button><strong>${packSel[p.id]||0}</strong><button type="button" class="btn btn-outline btn-sm" data-pack-inc="${esc(p.id)}">+</button></span></div>`).join("");
-      const remiseTxt=ok?"−"+money(disc):(qty>0?"Encore "+(3-qty)+" article(s)":"3 articles minimum");
-      box.innerHTML=`<div style="max-height:46vh;overflow:auto;display:grid;gap:8px">${rows}</div><div style="margin-top:14px;padding:14px;border:1px solid var(--beige);border-radius:14px;background:var(--pink-50)"><div class="summary-line"><span>Articles</span><strong>${qty}</strong></div><div class="summary-line"><span>Total</span><strong>${money(sum)}</strong></div><div class="summary-line"><span>${ok?"Remise "+Math.round(rate*100)+"%":"Remise"}</span><strong>${remiseTxt}</strong></div><div class="summary-line total"><span>Total du pack</span><strong>${money(sum-disc)}</strong></div></div><button type="button" class="btn btn-primary btn-block" style="margin-top:12px" data-pack-add ${ok?"":"disabled"}>Ajouter le pack au panier</button>`;
+      const remiseTxt=ok?"−"+money(disc):(qty>0?pt("more").replace("{n}",3-qty):pt("min3"));
+      box.innerHTML=`<div style="max-height:46vh;overflow:auto;display:grid;gap:8px">${rows}</div><div style="margin-top:14px;padding:14px;border:1px solid var(--beige);border-radius:14px;background:var(--pink-50)"><div class="summary-line"><span>${pt("items")}</span><strong>${qty}</strong></div><div class="summary-line"><span>${pt("total")}</span><strong>${money(sum)}</strong></div><div class="summary-line"><span>${ok?pt("discount")+" "+Math.round(rate*100)+"%":pt("discount")}</span><strong>${remiseTxt}</strong></div><div class="summary-line total"><span>${pt("packTotal")}</span><strong>${money(sum-disc)}</strong></div></div><button type="button" class="btn btn-primary btn-block" style="margin-top:12px" data-pack-add ${ok?"":"disabled"}>${pt("addPack")}</button>`;
     }
     document.addEventListener("click",e=>{
-      if(e.target.closest("[data-pack-open]")){packSel={};showModal("🎁 Crée ton Pack",'<div id="packBuilder"></div>',"","lg");renderPackBuilder();return}
+      if(e.target.closest("[data-pack-open]")){packSel={};showModal("🎁 "+pt("title"),'<div id="packBuilder"></div>',"","lg");renderPackBuilder();return}
       const inc=e.target.closest("[data-pack-inc]");
       if(inc){const id=inc.dataset.packInc,p=state.products.find(x=>x.id===id);if(p){packSel[id]=Math.min(p.stock,(packSel[id]||0)+1);renderPackBuilder()}return}
       const dec=e.target.closest("[data-pack-dec]");
@@ -896,7 +902,7 @@
       if(add&&!add.disabled){
         const sel=Object.entries(packSel).filter(([,q])=>q>0);
         const qty=sel.reduce((s,[,q])=>s+q,0);
-        if(qty<3){toast("Choisissez au moins 3 articles","error");return}
+        if(qty<3){toast(pt("min3toast"),"error");return}
         for(const [id,q] of sel){
           const p=state.products.find(x=>x.id===id);
           const inCart=state.cart.filter(l=>l.productId===id).reduce((s,l)=>s+l.quantity,0);
@@ -947,7 +953,7 @@
       footer.innerHTML=`<div class="delivery-mini"><select id="cartWilaya"><option value="">${t("selectWilaya")}</option>${wilayas.map(w=>`<option value="${w.code}" ${cartWilaya===w.code?"selected":""}>${esc(lang==="ar"?w.ar:w.fr)}</option>`).join("")}</select><select id="cartMethod"><option value="home" ${cartMethod==="home"?"selected":""}>${t("homeDelivery")}</option><option value="pickup" ${cartMethod==="pickup"?"selected":""} ${d&&!d.relayAvailable?"disabled":""}>${t("pickup")}</option></select></div>
       <div class="summary-line"><span>${t("subtotal")}</span><strong>${money(totals.subtotal)}</strong></div>
 
-      ${totals.packDiscount?`<div class="summary-line" style="color:var(--success)"><span>Remise Pack</span><strong>−${money(totals.packDiscount)}</strong></div>`:""}${totals.couponDiscount?`<div class="summary-line" style="color:var(--success)"><span>${t("couponDiscount")}</span><strong>−${money(totals.couponDiscount)}</strong></div>`:""}
+      ${totals.packDiscount?`<div class="summary-line" style="color:var(--success)"><span>${pt("packLine")}</span><strong>−${money(totals.packDiscount)}</strong></div>`:""}${totals.couponDiscount?`<div class="summary-line" style="color:var(--success)"><span>${t("couponDiscount")}</span><strong>−${money(totals.couponDiscount)}</strong></div>`:""}
       <div class="summary-line"><span>${t("shipping")}</span><strong>${totals.shippingKnown?(totals.shipping===0?t("free"):money(totals.shipping)):t("selectWilaya")}</strong></div>
       <div class="summary-line total"><span>${t("grandTotal")}</span><strong>${money(totals.total)}</strong></div>
       <div class="coupon-row"><input id="cartCoupon" value="${esc(appliedCoupon)}" placeholder="${t("couponPlaceholder")}"><button class="btn btn-soft btn-sm" data-apply-coupon="cart">${t("apply")}</button></div>
@@ -997,7 +1003,7 @@
               <label class="radio-card"><input type="radio" name="delivery" value="home" ${checkoutMethod==="home"?"checked":""}><span><strong>${t("homeDelivery")}</strong><small>${d?money(d.home):t("selectWilaya")}</small></span></label>
               <label class="radio-card"><input type="radio" name="delivery" value="pickup" ${checkoutMethod==="pickup"?"checked":""} ${relayOK?"":"disabled"}><span><strong>${t("pickup")}</strong><small>${relayOK?money(d.relay):t("pickupUnavailable")}</small></span></label>
             </div></div>
-            <div class="form-group full"><label class="form-label" for="coCompany">Entreprise de livraison</label><select class="form-control" id="coCompany" name="company" required><option value="">Choisir…</option>${deliveryCompanies.map(c=>`<option value="${esc(c)}" ${checkoutCompany===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
+            <div class="form-group full"><label class="form-label" for="coCompany">${pt("company")}</label><select class="form-control" id="coCompany" name="company" required><option value="">${pt("choose")}</option>${deliveryCompanies.map(c=>`<option value="${esc(c)}" ${checkoutCompany===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
         <div class="form-group full"><label class="form-label">${t("payment")}</label><label class="radio-card"><input type="radio" name="payment" value="cod" checked ${state.settings.codEnabled?"":"disabled"}><span><strong>${t("cod")}</strong><small>${t("paymentCODNote")}</small></span></label><div class="radio-card" style="margin-top:9px;opacity:.55"><input type="radio" disabled><span><strong>${t("paymentSoon")}</strong></span></div></div>
             <div class="form-group full"><label class="form-label" for="coNote">Message (optionnel)</label><textarea class="form-control" id="coNote" name="note" style="min-height:70px"></textarea></div>
             <div class="form-group full"><label class="checkbox-grid"><label><input type="checkbox" required> ${t("terms")}</label></label></div>
@@ -1012,7 +1018,7 @@
       const wilaya=document.getElementById("coWilaya")?.value||checkoutWilaya;
       const method=document.querySelector('input[name="delivery"]:checked')?.value||checkoutMethod;
       const totals=cartTotals(wilaya,method);
-      totalsBox.innerHTML=`<div class="summary-line"><span>${t("subtotal")}</span><strong>${money(totals.subtotal)}</strong></div>${totals.packDiscount?`<div class="summary-line" style="color:var(--success)"><span>Remise Pack</span><strong>−${money(totals.packDiscount)}</strong></div>`:""}${totals.couponDiscount?`<div class="summary-line" style="color:var(--success)"><span>${t("couponDiscount")}</span><strong>−${money(totals.couponDiscount)}</strong></div>`:""}<div class="summary-line"><span>${t("shipping")}</span><strong>${totals.shippingKnown?(totals.shipping===0?t("free"):money(totals.shipping)):t("selectWilaya")}</strong></div><div class="summary-line total"><span>${t("grandTotal")}</span><strong>${money(totals.total)}</strong></div>`;
+      totalsBox.innerHTML=`<div class="summary-line"><span>${t("subtotal")}</span><strong>${money(totals.subtotal)}</strong></div>${totals.packDiscount?`<div class="summary-line" style="color:var(--success)"><span>${pt("packLine")}</span><strong>−${money(totals.packDiscount)}</strong></div>`:""}${totals.couponDiscount?`<div class="summary-line" style="color:var(--success)"><span>${t("couponDiscount")}</span><strong>−${money(totals.couponDiscount)}</strong></div>`:""}<div class="summary-line"><span>${t("shipping")}</span><strong>${totals.shippingKnown?(totals.shipping===0?t("free"):money(totals.shipping)):t("selectWilaya")}</strong></div><div class="summary-line total"><span>${t("grandTotal")}</span><strong>${money(totals.total)}</strong></div>`;
     }
     function updateCheckoutCommunes(){
       const code=document.getElementById("coWilaya")?.value||"";checkoutWilaya=code;
