@@ -354,6 +354,25 @@
 .cat-circle-img img{width:100%;height:100%;object-fit:cover;display:block}
 .cat-circle:hover .cat-circle-img,.cat-circle:active .cat-circle-img{transform:translateY(-5px);border-color:var(--gold)}
 .cat-circle-name{font-size:11px;font-weight:700;text-align:center;line-height:1.25}
+
+/* ===== Style bannière (inspiré SaaS) ===== */
+.hero-card{isolation:isolate}
+.hero-card::before{content:"";position:absolute;inset:-20% -10% auto -10%;height:70%;background:radial-gradient(ellipse at 30% 0%,rgba(217,130,152,.38),transparent 62%);pointer-events:none;z-index:0}
+.hero-pill{display:inline-flex;align-items:center;gap:10px;padding:7px 8px 7px 14px;margin-bottom:18px;border-radius:999px;border:1px solid var(--pink-200);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);font-size:11px;font-weight:700;color:var(--pink-700);transition:transform .2s,box-shadow .2s}
+.hero-pill:hover{box-shadow:0 8px 22px rgba(200,117,136,.22)}
+.hero-pill:active{transform:scale(.96)}
+.hero-pill-go{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--pink-500);color:#fff}
+.hero-pill-go svg{width:12px}
+.hero-copy h1{background:linear-gradient(180deg,var(--ink) 30%,var(--pink-700));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.02em}
+.hero-copy h1 em{-webkit-text-fill-color:var(--pink-500)}
+.hero-copy .btn-primary{background:linear-gradient(180deg,#e7a1b2,#c87588);box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 14px 34px rgba(200,117,136,.45);transition:transform .2s,box-shadow .2s}
+.hero-copy .btn-primary:hover{transform:scale(1.05);box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 18px 42px rgba(200,117,136,.55)}
+.hero-copy .btn-primary:active{transform:scale(.95)}
+[data-theme="dark"] .hero-pill{background:rgba(255,255,255,.06);border-color:var(--pink-200)}
+.hero-copy>*{animation:heroUp .7s ease-out both}
+.hero-copy>*:nth-child(2){animation-delay:.08s}.hero-copy>*:nth-child(3){animation-delay:.16s}.hero-copy>*:nth-child(4){animation-delay:.24s}.hero-copy>*:nth-child(5){animation-delay:.32s}.hero-copy>*:nth-child(6){animation-delay:.4s}
+@keyframes heroUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hero-copy>*{animation:none}}
 </style>
 </head>
 <body>
@@ -697,6 +716,7 @@
       return `<section class="hero"><div class="container">
         <div class="hero-card">
           <div class="hero-copy">
+            <a href="#shop" class="hero-pill" data-route="shop"><span>✨ ${t("newArrivals")}</span><span class="hero-pill-go">${icon("arrow-right")}</span></a>
             <span class="eyebrow">${t("heroEyebrow")}</span>
             <h1>${esc(t("heroTitle"))}</h1>
             <p>${esc(t("heroText"))}</p>
