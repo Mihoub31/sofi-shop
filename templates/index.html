@@ -382,6 +382,26 @@
 
 /* hideDemo */
 .announcement .demo{display:none!important}
+
+/* ===== Roue des produits ===== */
+.ww-box{position:relative;height:clamp(430px,72vh,640px);border:1px solid var(--beige);border-radius:26px;background:var(--pink-50);overflow:hidden;user-select:none}
+.ww-stage{position:absolute;inset:0;touch-action:pan-y;cursor:grab;outline:none}
+.ww-stage:active{cursor:grabbing}
+.ww-stage:focus-visible{outline:2px solid var(--pink-400);outline-offset:-4px}
+.ww-wheel{position:absolute;top:50%;left:50%;transform-style:preserve-3d}
+.ww-card{position:absolute;backface-visibility:hidden;-webkit-backface-visibility:hidden;cursor:pointer}
+.ww-face{position:relative;display:block;width:100%;height:100%;overflow:hidden;border-radius:14px;background:var(--beige);box-shadow:0 18px 40px -18px rgba(52,42,44,.55)}
+.ww-face img{width:100%;height:100%;object-fit:cover;display:block}
+.ww-label{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-family:var(--font-title);letter-spacing:-.01em;color:var(--ink)}
+.ww-title{position:absolute;top:50%;inset-inline-start:6%;transform:translateY(-50%);max-width:28%;pointer-events:none;opacity:0;font-family:var(--font-title);line-height:1.1;color:var(--ink)}
+.ww-title small{display:block;margin-top:8px;font-size:.55em;font-family:inherit;color:var(--pink-700)}
+.ww-index{position:absolute;top:6%;inset-inline-end:3%;list-style:none;text-align:end;font-size:11px;line-height:1.8}
+.ww-index button{background:none;border:0;padding:0;font:inherit;color:var(--muted);cursor:pointer}
+.ww-index button.on{color:var(--ink);font-weight:700}
+.ww-nav{position:absolute;bottom:14px;inset-inline:0;display:flex;justify-content:center;align-items:center;gap:12px;direction:ltr}
+.ww-nav button{width:40px;height:40px;border-radius:50%;border:1px solid var(--pink-200);background:var(--ivory);color:var(--pink-700);font-size:22px;line-height:1;cursor:pointer}
+.ww-hint{font-size:10px;color:var(--muted)}
+@media(max-width:700px){.ww-index{display:none}.ww-title{top:auto;bottom:64px;inset-inline:0;transform:none;max-width:none;text-align:center;padding:0 12px}}
 </style>
 </head>
 <body>
@@ -873,6 +893,118 @@ ar:{offer:"عرض خاص",title:"صمّم باقتك",desc:"اختر 3 منتج�
 en:{offer:"Special offer",title:"Build your Pack",desc:"Pick at least 3 items and get a discount on the total: <strong>30%</strong> if every item costs 1,000 DA or less, <strong>25%</strong> if the priciest is between 1,000 and 5,000 DA, <strong>20%</strong> above 5,000 DA.",compose:"Build my pack",more:"{n} more item(s)",min3:"3 items minimum",items:"Items",total:"Total",discount:"Discount",packTotal:"Pack total",addPack:"Add pack to cart",min3toast:"Choose at least 3 items",packLine:"Pack discount",company:"Delivery company",choose:"Choose…"}
 };
     function pt(k){return (PACK_T[lang]||PACK_T.fr)[k]||PACK_T.fr[k]}
+    var WW={cardH:.38,ratio:1.3,step:40,drum:2.22,lens:2.7,ring:1.14,bow:1.82,title:.124,cull:1.6};
+    var WW_T={
+fr:{title:"La roue Sofi",sub:"Faites tourner la roue pour découvrir nos produits.",label:"Nos produits",hint:"Glissez, ou cliquez puis faites défiler",prev:"Précédent",next:"Suivant"},
+ar:{title:"عجلة Sofi",sub:"أدر العجلة لتكتشف منتجاتنا.",label:"منتجاتنا",hint:"اسحب، أو انقر ثم مرّر",prev:"السابق",next:"التالي"},
+en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:"Our products",hint:"Swipe, or click then scroll",prev:"Previous",next:"Next"}
+};
+    function wwt(k){return (WW_T[lang]||WW_T.fr)[k]}
+    function wwClamp(v,a,b){return Math.min(b,Math.max(a,v))}
+    function wwItems(){
+      var a=state.products.filter(function(p){return p.stock>0&&p.image});
+      return a.filter(function(p){return p.featured}).concat(a.filter(function(p){return !p.featured})).slice(0,9);
+    }
+    function wheelSectionHTML(){
+      var it=wwItems();if(it.length<3)return "";
+      return `<section class="section-sm ww-sec"><div class="container">${sectionHead(wwt("title"),wwt("sub"))}<div class="ww-box"><div class="ww-stage" tabindex="0" role="listbox" aria-label="${esc(wwt("label"))}"><div class="ww-wheel">${it.map(function(p){return `<div class="ww-card" role="option" data-id="${esc(p.id)}" data-t="${esc(tr(p))}" data-p="${esc(money(p.price))}"><span class="ww-face"><img src="${safeImage(p.image)}" alt="${esc(tr(p))}" draggable="false"></span></div>`}).join("")}</div></div><div class="ww-label">${esc(wwt("label"))}</div><div class="ww-title"></div><ol class="ww-index">${it.map(function(p,i){return `<li><button type="button" data-ww-go="${i}">${esc(tr(p))}</button></li>`}).join("")}</ol><div class="ww-nav"><button type="button" data-ww-prev aria-label="${esc(wwt("prev"))}">‹</button><span class="ww-hint">${esc(wwt("hint"))}</span><button type="button" data-ww-next aria-label="${esc(wwt("next"))}">›</button></div></div></div></section>`;
+    }
+    function wwPlace(ringDeg,drumDeg,ringR,drumR,bow,m){
+      var bx=m*(-bow*(1-Math.cos(drumDeg*Math.PI/180)));
+      return "translateX("+bx+"px) rotateZ("+((1-m)*ringDeg)+"deg) translateY("+(-(1-m)*ringR)+"px) rotateX("+(m*drumDeg)+"deg) translateZ("+(m*drumR)+"px)";
+    }
+    function wwInit(root){
+      var stage=root.querySelector(".ww-stage"),wheel=root.querySelector(".ww-wheel"),
+      cards=[].slice.call(root.querySelectorAll(".ww-card")),
+      labelEl=root.querySelector(".ww-label"),titleEl=root.querySelector(".ww-title"),
+      idx=[].slice.call(root.querySelectorAll("[data-ww-go]"));
+      var N=cards.length,last=N-1,turn=0,target=0,active=-1,W=0,H=0,mt=null,settle=0,vis=true,dr=null,mv=0,ro=null,io=null;
+      var reduced=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+      function to(n){target=wwClamp(n,0,last+1)}
+      function measure(){
+        W=stage.clientWidth;H=stage.clientHeight;if(!W||!H)return;
+        var cw=Math.min(H*WW.cardH*WW.ratio,W*(W<600?0.5:0.34)),ch=cw/WW.ratio;
+        mt={cw:cw,ch:ch,drumR:ch*WW.drum,ringR:ch*WW.ring,bow:ch*WW.bow,ringScale:wwClamp(((2*Math.PI*ch*WW.ring/N)*0.82)/(cw||1),0.16,1)};
+        stage.style.perspective=(ch*WW.lens)+"px";
+        cards.forEach(function(c){c.style.width=cw+"px";c.style.height=ch+"px";c.style.marginLeft=(-cw/2)+"px";c.style.marginTop=(-ch/2)+"px"});
+        var fs=Math.max(15,ch*WW.title)+"px";labelEl.style.fontSize=fs;titleEl.style.fontSize=fs;
+      }
+      function setActive(n){
+        active=n;var c=cards[n];titleEl.textContent="";
+        var a=document.createElement("span");a.textContent=c.getAttribute("data-t");
+        var s=document.createElement("small");s.textContent=c.getAttribute("data-p");
+        titleEl.appendChild(a);titleEl.appendChild(s);
+        idx.forEach(function(b,i){b.classList.toggle("on",i===n)});
+        cards.forEach(function(x,i){x.setAttribute("aria-selected",i===n?"true":"false")});
+      }
+      function frame(){
+        if(!root.isConnected){if(ro)ro.disconnect();if(io)io.disconnect();return}
+        requestAnimationFrame(frame);
+        if(!vis)return;
+        if(!mt){measure();if(!mt)return}
+        var gap=target-turn;
+        if(Math.abs(gap)<0.0005)turn=target;else turn+=gap*(reduced?1:0.12);
+        var m=wwClamp(turn,0,1),pos=Math.max(0,turn-1);
+        wheel.style.transform="translateZ("+(-m*mt.drumR)+"px)";
+        for(var i=0;i<N;i++){
+          var d=i-pos,c=cards[i];
+          c.style.transform=wwPlace(d*(360/N),d*WW.step,mt.ringR,mt.drumR,mt.bow,m);
+          c.style.opacity=(m>0.5&&Math.abs(d)>WW.cull)?"0":"1";
+          c.style.zIndex=String(Math.round(100-Math.abs(d)*2));
+          c.firstElementChild.style.transform="scale("+(mt.ringScale+(1-mt.ringScale)*m)+")";
+        }
+        labelEl.style.opacity=String(1-m);titleEl.style.opacity=String(m);
+        var near=wwClamp(Math.round(pos),0,last);if(near!==active)setActive(near);
+      }
+      function onMove(e){
+        var dx=dr.x-e.clientX,dy=dr.y-e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
+        to(target+(dx+dy)/420);dr={x:e.clientX,y:e.clientY};
+      }
+      function onUp(){
+        window.removeEventListener("pointermove",onMove);window.removeEventListener("pointerup",onUp);window.removeEventListener("pointercancel",onUp);
+        dr=null;if(target>0)to(Math.round(target));
+      }
+      stage.addEventListener("pointerdown",function(e){
+        dr={x:e.clientX,y:e.clientY};mv=0;
+        window.addEventListener("pointermove",onMove);window.addEventListener("pointerup",onUp);window.addEventListener("pointercancel",onUp);
+      });
+      stage.addEventListener("click",function(e){
+        if(mv>8){mv=0;e.stopPropagation();e.preventDefault();return}
+        var c=e.target.closest&&e.target.closest(".ww-card");if(!c)return;
+        var i=cards.indexOf(c);
+        if(turn>=0.98&&i===active&&Math.abs(turn-1-i)<0.35){
+          c.setAttribute("data-open-product",c.getAttribute("data-id"));
+          setTimeout(function(){c.removeAttribute("data-open-product")},0);
+          return;
+        }
+        e.stopPropagation();to(i+1);
+      },true);
+      stage.addEventListener("wheel",function(e){
+        if(document.activeElement!==stage)return;
+        var nx=target+e.deltaY/900;if(nx>0&&nx<last+1)e.preventDefault();
+        to(nx);clearTimeout(settle);settle=setTimeout(function(){to(Math.round(target))},140);
+      },{passive:false});
+      stage.addEventListener("keydown",function(e){
+        var k=e.key;
+        if(k==="ArrowDown"||k==="ArrowRight")to(Math.round(target)+1);
+        else if(k==="ArrowUp"||k==="ArrowLeft")to(Math.round(target)-1);
+        else return;
+        e.preventDefault();
+      });
+      root.addEventListener("click",function(e){
+        var g=e.target.closest("[data-ww-go]");if(g){to(+g.getAttribute("data-ww-go")+1);return}
+        if(e.target.closest("[data-ww-next]")){to(Math.round(target)+1);return}
+        if(e.target.closest("[data-ww-prev]"))to(Math.round(target)-1);
+      });
+      if("ResizeObserver" in window){ro=new ResizeObserver(measure);ro.observe(stage)}
+      if("IntersectionObserver" in window){io=new IntersectionObserver(function(en){vis=en[0].isIntersecting});io.observe(root)}
+      measure();setActive(0);requestAnimationFrame(frame);
+    }
+    function wwScan(){
+      document.querySelectorAll(".ww-box:not([data-ww])").forEach(function(r){r.setAttribute("data-ww","1");wwInit(r)});
+    }
+    function wwStart(){if(!document.body)return;new MutationObserver(wwScan).observe(document.body,{childList:true,subtree:true});wwScan()}
+    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",wwStart);else wwStart();
     function packRate(maxPrice){return maxPrice<=1000?0.30:maxPrice<=5000?0.25:0.20}
     function packDiscountFor(cart){
       let qty=0,sum=0,max=0;
@@ -881,7 +1013,7 @@ en:{offer:"Special offer",title:"Build your Pack",desc:"Pick at least 3 items an
     }
     var packSel={};
     function packSectionHTML(){return `<section class="section-sm"><div class="container"><div style="border:1px solid var(--beige);background:var(--pink-50);border-radius:26px;padding:30px;display:grid;gap:14px;text-align:center"><span class="eyebrow" style="justify-content:center">${pt("offer")}</span><h2 class="section-title"><span class="pack-gift" aria-hidden="true">🎁</span> ${pt("title")} <span aria-hidden="true">✨</span></h2><p class="muted" style="font-size:13px;max-width:600px;margin:0 auto">${pt("desc")}</p><div><button class="btn btn-primary" type="button" data-pack-open>${pt("compose")}</button></div></div></div></section>`}
-    function renderHome(){return renderHomeBase().replace("</section>",m=>m+packSectionHTML())}
+    function renderHome(){return renderHomeBase().replace("</section>",m=>m+packSectionHTML()+wheelSectionHTML())}
     function renderPackBuilder(){
       const box=document.getElementById("packBuilder");if(!box)return;
       const items=state.products.filter(p=>p.stock>0);
