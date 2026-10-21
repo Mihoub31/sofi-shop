@@ -345,6 +345,15 @@
 .pc-reveal{opacity:0;transform:translateY(26px);transition:opacity .6s ease,transform .6s ease}
 .pc-reveal.pc-in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.hero-image,.floating-card{animation:none}.pc-reveal{opacity:1;transform:none;transition:none}}
+
+/* ===== Catégories en cercles ===== */
+.cat-circles{display:flex;justify-content:safe center;gap:20px;overflow-x:auto;padding:8px 4px 16px;scroll-snap-type:x proximity;scrollbar-width:none}
+.cat-circles::-webkit-scrollbar{display:none}
+.cat-circle{flex:0 0 auto;width:96px;display:grid;gap:10px;justify-items:center;background:none;border:0;cursor:pointer;scroll-snap-align:start;color:var(--ink);font:inherit}
+.cat-circle-img{width:88px;height:88px;border-radius:50%;overflow:hidden;border:2px solid var(--pink-200);background:var(--pink-50);box-shadow:var(--shadow-sm);transition:transform .3s,border-color .3s}
+.cat-circle-img img{width:100%;height:100%;object-fit:cover;display:block}
+.cat-circle:hover .cat-circle-img,.cat-circle:active .cat-circle-img{transform:translateY(-5px);border-color:var(--gold)}
+.cat-circle-name{font-size:11px;font-weight:700;text-align:center;line-height:1.25}
 </style>
 </head>
 <body>
@@ -721,9 +730,7 @@
       </div></section>
       <section class="section-sm"><div class="container">
         ${sectionHead(t("shopByCategory"),t("categoryText"))}
-        <div class="category-grid">${categories.map(c=>`<article class="category-card" data-shop-category="${c.slug}" tabindex="0">
-          <img src="${safeImage(c.image)}" alt="${esc(tr(c))}" loading="lazy"><div class="category-card-content"><span>${t("shop")}</span><h3>${esc(tr(c))}</h3><div class="arrow">${icon("arrow-up-right")}</div></div>
-        </article>`).join("")}</div>
+        <div class="cat-circles">${categories.map(c=>`<button type="button" class="cat-circle" data-shop-category="${c.slug}"><span class="cat-circle-img"><img src="${safeImage(c.image)}" alt="" loading="lazy"></span><span class="cat-circle-name">${esc(tr(c))}</span></button>`).join("")}</div>
       </div></section>
       <section class="section-sm"><div class="container">
         <div class="promo-banner">
