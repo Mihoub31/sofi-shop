@@ -328,6 +328,11 @@
 .admin-page .muted,.admin-page .small{color:#a99fa2}
 .admin-page .summary-line{color:#f3ece8;border-color:#2d3137}
 .admin-page .badge{border:0}
+
+/* ===== Icône Pack ===== */
+.pack-gift{display:inline-block;font-size:.9em;animation:packBounce 2.2s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes packBounce{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-6px) rotate(-8deg)}60%{transform:translateY(-3px) rotate(6deg)}}
+@media (prefers-reduced-motion:reduce){.pack-gift{animation:none}}
 </style>
 </head>
 <body>
@@ -821,7 +826,7 @@
       return qty>=3?Math.round(sum*packRate(max)*100)/100:0;
     }
     var packSel={};
-    function packSectionHTML(){return `<section class="section-sm"><div class="container"><div style="border:1px solid var(--beige);background:var(--pink-50);border-radius:26px;padding:30px;display:grid;gap:14px;text-align:center"><span class="eyebrow" style="justify-content:center">Offre spéciale</span><h2 class="section-title">Crée ton Pack</h2><p class="muted" style="font-size:13px;max-width:600px;margin:0 auto">Choisis au moins 3 articles et profite d'une remise sur le total : <strong>30 %</strong> si chaque article coûte 1 000 DA ou moins, <strong>25 %</strong> si le plus cher est entre 1 000 et 5 000 DA, <strong>20 %</strong> au-dessus de 5 000 DA.</p><div><button class="btn btn-primary" type="button" data-pack-open>Composer mon pack</button></div></div></div></section>`}
+    function packSectionHTML(){return `<section class="section-sm"><div class="container"><div style="border:1px solid var(--beige);background:var(--pink-50);border-radius:26px;padding:30px;display:grid;gap:14px;text-align:center"><span class="eyebrow" style="justify-content:center">Offre spéciale</span><h2 class="section-title"><span class="pack-gift" aria-hidden="true">🎁</span> Crée ton Pack <span aria-hidden="true">✨</span></h2><p class="muted" style="font-size:13px;max-width:600px;margin:0 auto">Choisis au moins 3 articles et profite d'une remise sur le total : <strong>30 %</strong> si chaque article coûte 1 000 DA ou moins, <strong>25 %</strong> si le plus cher est entre 1 000 et 5 000 DA, <strong>20 %</strong> au-dessus de 5 000 DA.</p><div><button class="btn btn-primary" type="button" data-pack-open>Composer mon pack</button></div></div></div></section>`}
     function renderHome(){return renderHomeBase().replace("</section>",m=>m+packSectionHTML())}
     function renderPackBuilder(){
       const box=document.getElementById("packBuilder");if(!box)return;
@@ -834,7 +839,7 @@
       box.innerHTML=`<div style="max-height:46vh;overflow:auto;display:grid;gap:8px">${rows}</div><div style="margin-top:14px;padding:14px;border:1px solid var(--beige);border-radius:14px;background:var(--pink-50)"><div class="summary-line"><span>Articles</span><strong>${qty}</strong></div><div class="summary-line"><span>Total</span><strong>${money(sum)}</strong></div><div class="summary-line"><span>${ok?"Remise "+Math.round(rate*100)+"%":"Remise"}</span><strong>${remiseTxt}</strong></div><div class="summary-line total"><span>Total du pack</span><strong>${money(sum-disc)}</strong></div></div><button type="button" class="btn btn-primary btn-block" style="margin-top:12px" data-pack-add ${ok?"":"disabled"}>Ajouter le pack au panier</button>`;
     }
     document.addEventListener("click",e=>{
-      if(e.target.closest("[data-pack-open]")){packSel={};showModal("Crée ton Pack",'<div id="packBuilder"></div>',"","lg");renderPackBuilder();return}
+      if(e.target.closest("[data-pack-open]")){packSel={};showModal("🎁 Crée ton Pack",'<div id="packBuilder"></div>',"","lg");renderPackBuilder();return}
       const inc=e.target.closest("[data-pack-inc]");
       if(inc){const id=inc.dataset.packInc,p=state.products.find(x=>x.id===id);if(p){packSel[id]=Math.min(p.stock,(packSel[id]||0)+1);renderPackBuilder()}return}
       const dec=e.target.closest("[data-pack-dec]");
