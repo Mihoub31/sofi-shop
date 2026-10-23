@@ -402,6 +402,11 @@
 .ww-nav button{width:40px;height:40px;border-radius:50%;border:1px solid var(--pink-200);background:var(--ivory);color:var(--pink-700);font-size:22px;line-height:1;cursor:pointer}
 .ww-hint{font-size:10px;color:var(--muted)}
 @media(max-width:700px){.ww-index{display:none}.ww-title{top:auto;bottom:64px;inset-inline:0;transform:none;max-width:none;text-align:center;padding:0 12px}}
+
+/* ===== Statistiques admin ===== */
+.ast-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:15px}
+.ast-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px}
+@media(max-width:780px){.ast-kpis{grid-template-columns:1fr}.ast-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1235,11 +1240,47 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
       const months=[];for(let i=5;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);months.push(d)}
       const values=months.map(d=>valid.filter(o=>{const x=new Date(o.createdAt);return x.getFullYear()===d.getFullYear()&&x.getMonth()===d.getMonth()}).reduce((s,o)=>s+o.totals.total,0));
       const max=Math.max(...values,1);
-      return `<div class="admin-head"><div><h1>${t("dashboard")}</h1><p>${new Date().toLocaleDateString(lang==="ar"?"ar-DZ":lang==="en"?"en-DZ":"fr-DZ")}</p></div><span class="badge badge-pink">${t("demoNotice")}</span></div>
+      return `<div class="admin-head"><div><h1>${t("dashboard")}</h1><p>${new Date().toLocaleDateString(lang==="ar"?"ar-DZ":lang==="en"?"en-DZ":"fr-DZ")}</p></div></div>
         <div class="kpi-grid"><div class="kpi"><div class="kpi-icon">${icon("shopping-bag")}</div><strong>${state.orders.length}</strong><span>${t("orders")}</span></div><div class="kpi"><div class="kpi-icon">${icon("banknote")}</div><strong>${num(revenue)} DA</strong><span>${t("revenue")}</span></div><div class="kpi"><div class="kpi-icon">${icon("package")}</div><strong>${state.products.length}</strong><span>${t("products")}</span></div><div class="kpi"><div class="kpi-icon">${icon("triangle-alert")}</div><strong>${low}</strong><span>${t("lowStockCount")}</span></div></div>
         <div class="admin-grid-2"><div class="admin-card"><h3>${t("revenue")}</h3><div class="chart-bars">${months.map((d,i)=>`<div class="chart-row"><span>${d.toLocaleDateString(lang==="ar"?"ar-DZ":lang==="en"?"en-DZ":"fr-DZ",{month:"short"})}</span><div class="chart-track"><div class="chart-fill" style="width:${values[i]/max*100}%"></div></div><strong>${num(values[i])}</strong></div>`).join("")}</div></div>
-        <div class="admin-card"><h3>${t("customerCount")}</h3><strong style="font-size:48px;font-family:var(--font-title)">${customers}</strong><p class="muted small">${state.leads.length} ${t("wholesaleLead")}</p><div class="badge badge-green" style="margin-top:12px">${t("localOnly")}</div></div></div>
-        <div class="admin-card" style="margin-top:15px"><div class="admin-head" style="margin-bottom:10px"><h3 style="margin:0">${t("recentOrders")}</h3><button class="btn btn-sm btn-soft" data-admin-tab="orders">${t("viewDetails")}</button></div>${recentOrdersTable(state.orders.slice(0,6))}</div>`;
+        <div class="admin-card"><h3>${t("customerCount")}</h3><strong style="font-size:48px;font-family:var(--font-title)">${customers}</strong><p class="muted small">${state.leads.length} ${t("wholesaleLead")}</p></div></div>
+        ${adminStatsHTML()}<div class="admin-card" style="margin-top:15px"><div class="admin-head" style="margin-bottom:10px"><h3 style="margin:0">${t("recentOrders")}</h3><button class="btn btn-sm btn-soft" data-admin-tab="orders">${t("viewDetails")}</button></div>${recentOrdersTable(state.orders.slice(0,6))}</div>`;
+    }
+    var ST_T={
+fr:{best:"Meilleures ventes",qty:"vendu(s)",none:"Aucune vente pour le moment",avg:"Panier moyen",week:"Commandes (7 jours)",units:"Articles vendus",wil:"Top wilayas",stat:"Commandes par statut",low:"Stock faible",lowok:"Aucun produit en stock faible",out:"Rupture"},
+ar:{best:"الأكثر مبيعاً",qty:"مباع",none:"لا توجد مبيعات بعد",avg:"متوسط السلة",week:"الطلبات (7 أيام)",units:"المنتجات المباعة",wil:"أفضل الولايات",stat:"الطلبات حسب الحالة",low:"مخزون منخفض",lowok:"لا يوجد منتج بمخزون منخفض",out:"نفد"},
+en:{best:"Best sellers",qty:"sold",none:"No sales yet",avg:"Average basket",week:"Orders (7 days)",units:"Items sold",wil:"Top wilayas",stat:"Orders by status",low:"Low stock",lowok:"No low-stock products",out:"Out of stock"}
+};
+    function stt(k){return (ST_T[lang]||ST_T.fr)[k]}
+    function adminStatsHTML(){
+      const real=state.orders.filter(o=>!o.demo&&o.status!=="cancelled");
+      const sold={};let units=0;
+      real.forEach(o=>(o.items||[]).forEach(i=>{const k=i.productId||i.name,r=sold[k]||(sold[k]={name:i.name,qty:0});const q=Number(i.qty)||0;r.qty+=q;units+=q}));
+      const top=Object.values(sold).sort((a,b)=>b.qty-a.qty).slice(0,5);
+      const topMax=Math.max(...top.map(x=>x.qty),1);
+      const rev=real.reduce((s,o)=>s+(o.totals?.total||0),0);
+      const avg=real.length?Math.round(rev/real.length):0;
+      const wk=Date.now()-7*86400000;
+      const week=real.filter(o=>new Date(o.createdAt).getTime()>=wk).length;
+      const wc={};real.forEach(o=>{const c=o.customer&&o.customer.wilaya;if(c)wc[c]=(wc[c]||0)+1});
+      const wtop=Object.entries(wc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const wmax=Math.max(...wtop.map(x=>x[1]),1);
+      const wname=c=>{
+        const w=wilayas.find(x=>Array.isArray(x)?x[0]===c:x.code===c);if(!w)return c;
+        if(Array.isArray(w))return (lang==="ar"?w[2]:w[1])||c;
+        const n=w.name;return n?(typeof n==="string"?n:(n[lang]||n.fr||c)):c;
+      };
+      const sc={};state.orders.filter(o=>!o.demo).forEach(o=>{sc[o.status]=(sc[o.status]||0)+1});
+      const low=state.products.filter(p=>p.stock<=5).sort((a,b)=>a.stock-b.stock).slice(0,6);
+      const bar=(label,val,max,right)=>`<div class="chart-row" style="grid-template-columns:1fr 1.1fr 52px"><span style="font-size:11px">${esc(label)}</span><div class="chart-track"><div class="chart-fill" style="width:${Math.max(4,val/max*100)}%"></div></div><strong>${right}</strong></div>`;
+      const empty=`<p class="muted small">${esc(stt("none"))}</p>`;
+      const order=["pending","confirmed","prepared","shipped","delivered","cancelled"];
+      return `<div class="ast-kpis"><div class="kpi"><div class="kpi-icon">${icon("banknote")}</div><strong>${num(avg)} DA</strong><span>${stt("avg")}</span></div><div class="kpi"><div class="kpi-icon">${icon("shopping-bag")}</div><strong>${week}</strong><span>${stt("week")}</span></div><div class="kpi"><div class="kpi-icon">${icon("package")}</div><strong>${units}</strong><span>${stt("units")}</span></div></div>
+      <div class="ast-grid"><div class="admin-card"><h3>${stt("best")}</h3><div class="chart-bars">${top.length?top.map(x=>bar(x.name,x.qty,topMax,x.qty+" "+stt("qty"))).join(""):empty}</div></div>
+      <div class="admin-card"><h3>${stt("wil")}</h3><div class="chart-bars">${wtop.length?wtop.map(x=>bar(wname(x[0]),x[1],wmax,x[1])).join(""):empty}</div></div>
+      <div class="admin-card"><h3>${stt("stat")}</h3><div style="display:grid;gap:10px">${order.filter(s=>sc[s]).map(s=>`<div style="display:flex;justify-content:space-between;align-items:center">${statusBadge(s)}<strong>${sc[s]}</strong></div>`).join("")||empty}</div></div>
+      <div class="admin-card"><h3>${stt("low")}</h3><div style="display:grid;gap:9px">${low.length?low.map(p=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px"><span>${esc(tr(p))}</span><strong>${p.stock<=0?stt("out"):p.stock}</strong></div>`).join(""):`<p class="muted small">${stt("lowok")}</p>`}</div></div></div>
+      `;
     }
     function recentOrdersTable(list){
       if(!list.length)return `<div class="empty-state">${t("noOrders")}</div>`;
