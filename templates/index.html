@@ -617,7 +617,7 @@
       const south=["11","30","33","37","47","49","50","51","52","53","54","55","56","57","58"].includes(w.code);
       const relayCodes=["06","07","09","16","19","23","25","31","35","42"];
       const home=south?700:(i%3===0?450:350);
-      return [w.code,{home,relay:Math.max(200,home-100),relayAvailable:relayCodes.includes(w.code),communes:[...w.communes]}];
+      return [w.code,{home,relay:Math.max(200,home-100),relayAvailable:true,communes:[...w.communes]}];
     }));
 
     function defaultState(){
@@ -653,7 +653,7 @@
         return {...base,...saved,settings:{...base.settings,...saved.settings,delivery},products:(saved.products?.length&&saved.catalogVersion===CATALOG_VERSION)?saved.products:base.products};
       }catch(e){return base}
     }
-    let state=loadState();state.catalogVersion=CATALOG_VERSION;if(Array.isArray(SERVER_PRODUCTS)&&SERVER_PRODUCTS.length)state.products=SERVER_PRODUCTS;
+    let state=loadState();state.catalogVersion=CATALOG_VERSION;/* relayAll */Object.values(state.settings.delivery||{}).forEach(function(d){d.relayAvailable=true});if(Array.isArray(SERVER_PRODUCTS)&&SERVER_PRODUCTS.length)state.products=SERVER_PRODUCTS;
     let lang=state.settings.language||"fr";
     let appliedCoupon="";
     let cartWilaya="",cartMethod="home";
