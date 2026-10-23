@@ -410,6 +410,21 @@
 
 /* ===== Espace des données ===== */
 .ast-kpis .kpi strong{font-size:26px}
+
+/* ===== Photos des produits (admin) ===== */
+.ph-results{display:grid;gap:6px;margin-top:8px}
+.ph-res{display:flex;align-items:center;gap:10px;width:100%;text-align:start;padding:8px;border-radius:12px;border:1px solid var(--beige);background:var(--ivory);color:var(--ink);cursor:pointer;font:inherit}
+.ph-res img{width:44px;height:44px;border-radius:10px;object-fit:cover;flex:none}
+.ph-res span{display:grid;line-height:1.3}
+.ph-res strong{font-size:13px}
+.ph-res small{color:var(--muted);font-size:11px}
+.ph-sel{margin-top:14px;display:grid;gap:10px}
+.ph-cols{display:flex;gap:16px;flex-wrap:wrap}
+.ph-big{display:block;width:140px;height:140px;object-fit:cover;border-radius:14px;margin-top:6px;border:1px solid var(--beige)}
+.ph-actions{display:flex;gap:8px;flex-wrap:wrap}
+.admin-page .ph-res{background:#1a1d21;border-color:#3b4047;color:#f3ece8}
+.admin-page .ph-res:hover{border-color:#d98298}
+.admin-page .ph-big{border-color:#3b4047}
 </style>
 </head>
 <body>
@@ -1387,8 +1402,108 @@ en:{btn:"Quick add",title:"Quick add products",cat:"Category",names:"One product
       if(e.target.closest("[data-qa-go]")){qaRun();return}
       var ph=e.target.closest("[data-photo-product]");if(ph)qaPick(ph.dataset.photoProduct);
     });
+    var PH_T={
+fr:{title:"Photos des produits",sub:"Cherchez un produit, puis ajoutez ou remplacez sa photo. Le prix, le stock et la description ne changent pas.",ph:"Tapez les premières lettres du nom…",none:"Aucun produit trouvé",pick:"Choisir une photo",current:"Photo actuelle",newp:"Nouvelle photo",save:"Enregistrer la photo",cancel:"Annuler",saving:"Enregistrement…",saved:"Photo enregistrée",err:"Enregistrement impossible",hint:"Choisissez une photo depuis votre appareil."},
+ar:{title:"صور المنتجات",sub:"ابحث عن منتج ثم أضف صورته أو غيّرها. السعر والمخزون والوصف لا تتغير.",ph:"اكتب الأحرف الأولى من الاسم…",none:"لم يتم العثور على منتج",pick:"اختيار صورة",current:"الصورة الحالية",newp:"الصورة الجديدة",save:"حفظ الصورة",cancel:"إلغاء",saving:"جارٍ الحفظ…",saved:"تم حفظ الصورة",err:"تعذّر الحفظ",hint:"اختر صورة من جهازك."},
+en:{title:"Product photos",sub:"Search a product, then add or replace its photo. Price, stock and description stay unchanged.",ph:"Type the first letters of the name…",none:"No product found",pick:"Choose a photo",current:"Current photo",newp:"New photo",save:"Save photo",cancel:"Cancel",saving:"Saving…",saved:"Photo saved",err:"Could not save",hint:"Choose a photo from your device."}
+};
+    function pht(k){return (PH_T[lang]||PH_T.fr)[k]}
+    var phQuery="",phSel="",phBlob=null,phPrev="",phBusy=false;
+    function phNorm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}
+    function phMatches(q){
+      q=phNorm(q);if(!q)return [];
+      var out=[];
+      state.products.forEach(function(p){
+        var names=[p.name&&p.name.fr,p.name&&p.name.ar,p.name&&p.name.en,p.brand].map(phNorm).filter(Boolean);
+        var score=0;
+        names.forEach(function(n){
+          if(n.indexOf(q)===0)score=Math.max(score,3);
+          else if(n.split(/\s+/).some(function(w){return w.indexOf(q)===0}))score=Math.max(score,2);
+          else if(n.indexOf(q)>-1)score=Math.max(score,1);
+        });
+        if(score>0)out.push({p:p,s:score});
+      });
+      out.sort(function(a,b){return b.s-a.s});
+      return out.slice(0,8).map(function(x){return x.p});
+    }
+    function phResultsHTML(){
+      var q=phQuery.trim();if(!q)return "";
+      var list=phMatches(q);
+      if(!list.length)return '<p class="muted small" style="padding:10px">'+esc(pht("none"))+'</p>';
+      return list.map(function(p){return '<button type="button" class="ph-res" data-ph-pick="'+esc(p.id)+'"><img src="'+esc(safeImage(p.image))+'" alt=""><span><strong>'+esc(tr(p))+'</strong><small>'+esc(p.brand||"")+'</small></span></button>'}).join("");
+    }
+    function phSelectedHTML(){
+      var p=state.products.find(function(x){return x.id===phSel});
+      if(!p)return "";
+      return '<div class="ph-sel"><div class="ph-cols"><div><span class="muted small">'+esc(pht("current"))+'</span><img class="ph-big" src="'+esc(safeImage(p.image))+'" alt=""></div>'+(phPrev?'<div><span class="muted small">'+esc(pht("newp"))+'</span><img class="ph-big" src="'+esc(phPrev)+'" alt=""></div>':"")+'</div><strong>'+esc(tr(p))+'</strong><p class="muted small">'+esc(pht("hint"))+'</p><div class="ph-actions"><button type="button" class="btn btn-outline btn-sm" data-ph-file>'+esc(pht("pick"))+'</button>'+(phBlob?'<button type="button" class="btn btn-primary btn-sm" data-ph-save '+(phBusy?"disabled":"")+'>'+esc(pht(phBusy?"saving":"save"))+'</button>':"")+'<button type="button" class="btn btn-outline btn-sm" data-ph-cancel>'+esc(pht("cancel"))+'</button></div></div>';
+    }
+    function photoPanelHTML(){
+      return '<div class="admin-card ph-panel" style="margin-bottom:15px"><h3>'+esc(pht("title"))+'</h3><p class="muted small" style="margin-bottom:10px">'+esc(pht("sub"))+'</p><input class="form-control" id="phSearch" type="search" autocomplete="off" placeholder="'+esc(pht("ph"))+'" value="'+esc(phQuery)+'"><div id="phResults" class="ph-results">'+(phSel?"":phResultsHTML())+'</div><div id="phSelected">'+phSelectedHTML()+'</div></div>';
+    }
+    function phRefresh(){
+      var r=document.getElementById("phResults"),s=document.getElementById("phSelected");
+      if(r)r.innerHTML=phSel?"":phResultsHTML();
+      if(s)s.innerHTML=phSelectedHTML();
+    }
+    function phChoose(id){phSel=id;phBlob=null;if(phPrev){URL.revokeObjectURL(phPrev);phPrev=""}phRefresh()}
+    function phPickFile(){
+      var inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.style.display="none";
+      inp.onchange=async function(){
+        var f=inp.files[0];inp.remove();if(!f)return;
+        try{
+          var bmp=await createImageBitmap(f),sc=Math.min(1,1200/Math.max(bmp.width,bmp.height)),cv=document.createElement("canvas");
+          cv.width=Math.round(bmp.width*sc);cv.height=Math.round(bmp.height*sc);
+          var cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(bmp,0,0,cv.width,cv.height);
+          var blob=await new Promise(function(r){cv.toBlob(r,"image/jpeg",0.85)});
+          if(!blob)throw new Error("");
+          if(phPrev)URL.revokeObjectURL(phPrev);
+          phBlob=blob;phPrev=URL.createObjectURL(blob);phRefresh();
+        }catch(err){toast(pht("err"),"error")}
+      };
+      document.body.appendChild(inp);inp.click();
+    }
+    async function phSave(){
+      if(phBusy||!phBlob||!phSel)return;
+      var p=state.products.find(function(x){return x.id===phSel});if(!p)return;
+      phBusy=true;phRefresh();
+      try{
+        var fd=new FormData();fd.append("file",phBlob,"photo.jpg");
+        var up=await fetch("/api/admin/upload",{method:"POST",body:fd}),uj=await up.json().catch(function(){return null});
+        if(!up.ok||!uj||!uj.url)throw new Error((uj&&uj.error)||"");
+        var np=Object.assign({},p,{image:uj.url});
+        var pr=await fetch("/api/admin/products/"+encodeURIComponent(p.id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(np)}),pj=await pr.json().catch(function(){return null});
+        if(!pr.ok)throw new Error((pj&&pj.error)||"");
+        var saved=(pj&&pj.product)||np;
+        state.products=state.products.map(function(x){return x.id===p.id?saved:x});
+        persist();
+        phBlob=null;if(phPrev){URL.revokeObjectURL(phPrev);phPrev=""}
+        phBusy=false;toast(pht("saved"));renderAdminMain();
+      }catch(err){phBusy=false;toast((err&&err.message)||pht("err"),"error");phRefresh()}
+    }
+    document.addEventListener("input",function(e){
+      if(!e.target||e.target.id!=="phSearch")return;
+      phQuery=e.target.value;phSel="";phBlob=null;
+      if(phPrev){URL.revokeObjectURL(phPrev);phPrev=""}
+      phRefresh();
+    });
+    document.addEventListener("keydown",function(e){
+      if(e.key!=="Enter"||!e.target||e.target.id!=="phSearch")return;
+      e.preventDefault();var l=phMatches(phQuery);if(l.length)phChoose(l[0].id);
+    });
+    document.addEventListener("click",function(e){
+      var pk=e.target.closest&&e.target.closest("[data-ph-pick]");
+      if(pk){phChoose(pk.getAttribute("data-ph-pick"));return}
+      if(e.target.closest("[data-ph-file]")){phPickFile();return}
+      if(e.target.closest("[data-ph-save]")){phSave();return}
+      if(e.target.closest("[data-ph-cancel]")){
+        phSel="";phBlob=null;phQuery="";
+        if(phPrev){URL.revokeObjectURL(phPrev);phPrev=""}
+        var i=document.getElementById("phSearch");if(i)i.value="";
+        phRefresh();
+      }
+    });
     function adminProducts(){
-      return `<div class="admin-head"><div><h1>${t("products")}</h1><p>${state.products.length} ${t("results")}</p></div><button class="btn btn-primary btn-sm" data-new-product>${icon("plus")} ${t("addProduct")}</button></div><div style="margin:0 0 14px"><button class="btn btn-outline btn-sm" data-quick-add>⚡ ${qat("btn")}</button></div><div class="table-wrap"><table class="admin-table"><thead><tr><th>${t("product")}</th><th>${t("category")}</th><th>${t("retail")}</th><th>${t("stock")}</th><th></th></tr></thead><tbody>${state.products.map(p=>`<tr><td><div class="table-product"><img src="${safeImage(p.image)}" alt=""><div><strong>${esc(tr(p))}</strong><span>${esc(p.brand)}</span></div></div></td><td>${esc(categoryName(p.category))}</td><td>${money(p.price)}</td><td><span class="badge ${stockClass(p.stock)==="out"?"badge-red":stockClass(p.stock)==="low"?"badge-gold":"badge-green"}">${p.stock}</span></td><td><div class="table-actions"><button type="button" data-photo-product="${p.id}" title="${qat("photo")}">📷</button><button data-edit-product="${p.id}" title="${t("edit")}">${icon("pencil")}</button><button class="danger" data-delete-product="${p.id}" title="${t("delete")}">${icon("trash-2")}</button></div></td></tr>`).join("")}</tbody></table></div>`;
+      return `<div class="admin-head"><div><h1>${t("products")}</h1><p>${state.products.length} ${t("results")}</p></div><button class="btn btn-primary btn-sm" data-new-product>${icon("plus")} ${t("addProduct")}</button></div><div style="margin:0 0 14px"><button class="btn btn-outline btn-sm" data-quick-add>⚡ ${qat("btn")}</button></div>${photoPanelHTML()}<div class="table-wrap"><table class="admin-table"><thead><tr><th>${t("product")}</th><th>${t("category")}</th><th>${t("retail")}</th><th>${t("stock")}</th><th></th></tr></thead><tbody>${state.products.map(p=>`<tr><td><div class="table-product"><img src="${safeImage(p.image)}" alt=""><div><strong>${esc(tr(p))}</strong><span>${esc(p.brand)}</span></div></div></td><td>${esc(categoryName(p.category))}</td><td>${money(p.price)}</td><td><span class="badge ${stockClass(p.stock)==="out"?"badge-red":stockClass(p.stock)==="low"?"badge-gold":"badge-green"}">${p.stock}</span></td><td><div class="table-actions"><button type="button" data-photo-product="${p.id}" title="${qat("photo")}">📷</button><button data-edit-product="${p.id}" title="${t("edit")}">${icon("pencil")}</button><button class="danger" data-delete-product="${p.id}" title="${t("delete")}">${icon("trash-2")}</button></div></td></tr>`).join("")}</tbody></table></div>`;
     }
     function adminOrders(){
       const list=state.orders.filter(o=>!adminOrderStatus||o.status===adminOrderStatus);
