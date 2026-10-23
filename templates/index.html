@@ -1632,6 +1632,15 @@ en:{best:"Best sellers",qty:"sold",none:"No sales yet",avg:"Average basket",week
         e.stopPropagation();closeCart();
       },true);
     })();
+    /* XDEBUG */
+    document.addEventListener("pointerdown",function(e){
+      var d=document.getElementById("cartDrawer");
+      if(!d||!d.classList.contains("open"))return;
+      var el=document.elementFromPoint(e.clientX,e.clientY);
+      var b=d.querySelector("[data-cart-close]");var r=b?b.getBoundingClientRect():null;
+      var cn=el?(el.className&&el.className.baseVal!==undefined?el.className.baseVal:el.className):"";
+      toast("Clic sur: "+(el?el.tagName+"."+cn:"?")+" | X: "+(r?Math.round(r.left)+","+Math.round(r.top)+" "+Math.round(r.width)+"x"+Math.round(r.height):"absent")+" | clic: "+Math.round(e.clientX)+","+Math.round(e.clientY));
+    },true);
     document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeCart()}});
 
     document.getElementById("currentYear").textContent=new Date().getFullYear();
