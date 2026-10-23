@@ -1321,8 +1321,74 @@ en:{title:"Data storage",used:"used",of:"of",products:"Products",images:"Images"
       if(!list.length)return `<div class="empty-state">${t("noOrders")}</div>`;
       return `<div class="table-wrap"><table class="admin-table"><thead><tr><th>${t("reference")}</th><th>${t("customer")}</th><th>${t("status")}</th><th>${t("total")}</th><th></th></tr></thead><tbody>${list.map(o=>`<tr><td><strong>${esc(o.ref)}</strong>${o.demo?`<br><span class="badge badge-gold">${t("demoOrder")}</span>`:""}</td><td>${esc(o.customer.name)}<br><span class="muted">${esc(o.customer.phone)}</span></td><td>${statusBadge(o.status)}</td><td><strong>${money(o.totals.total)}</strong></td><td><button class="btn btn-sm btn-soft" data-view-order="${o.id}">${t("details")}</button></td></tr>`).join("")}</tbody></table></div>`;
     }
+    var QA_T={
+fr:{btn:"Ajout rapide",title:"Ajout rapide de produits",cat:"Catégorie",names:"Un produit par ligne",help:"Format : Nom | Marque | Prix. La marque et le prix sont facultatifs. Sans prix, le produit reste en rupture de stock jusqu'à ce que vous fixiez son prix.",stock:"Stock de départ",go:"Créer les produits",none:"Écrivez au moins un nom",done:"{n} produit(s) créé(s)",skip:"{n} déjà existant(s) ignoré(s)",fail:"{n} échec(s)",photo:"Ajouter une photo",up:"Envoi de la photo…",ok:"Photo enregistrée",err:"Envoi impossible",ph:"Crème visage | Nivea | 1800\nSérum Vitamine C\nRouge à lèvres | Maison Sofi | 1000"},
+ar:{btn:"إضافة سريعة",title:"إضافة منتجات بسرعة",cat:"الفئة",names:"منتج في كل سطر",help:"الصيغة: الاسم | العلامة | السعر. العلامة والسعر اختياريان. بدون سعر يبقى المنتج غير متوفر حتى تحدد سعره.",stock:"المخزون الابتدائي",go:"إنشاء المنتجات",none:"اكتب اسماً واحداً على الأقل",done:"تم إنشاء {n} منتج",skip:"تم تجاهل {n} منتج موجود مسبقاً",fail:"فشل {n}",photo:"إضافة صورة",up:"جارٍ إرسال الصورة…",ok:"تم حفظ الصورة",err:"تعذّر الإرسال",ph:"كريم للوجه | نيفيا | 1800\nسيروم فيتامين سي\nأحمر شفاه | Maison Sofi | 1000"},
+en:{btn:"Quick add",title:"Quick add products",cat:"Category",names:"One product per line",help:"Format: Name | Brand | Price. Brand and price are optional. Without a price, the product stays out of stock until you set one.",stock:"Starting stock",go:"Create products",none:"Write at least one name",done:"{n} product(s) created",skip:"{n} existing skipped",fail:"{n} failed",photo:"Add a photo",up:"Uploading photo…",ok:"Photo saved",err:"Upload failed",ph:"Face cream | Nivea | 1800\nVitamin C Serum\nLipstick | Maison Sofi | 1000"}
+};
+    function qat(k){return (QA_T[lang]||QA_T.fr)[k]}
+    function openQuickAdd(){
+      showModal(qat("title"),`<div style="display:grid;gap:12px"><div class="form-group"><label class="form-label" for="qaCat">${qat("cat")}</label><select class="form-control" id="qaCat">${categoryOptions("maquillage")}</select></div><div class="form-group"><label class="form-label" for="qaNames">${qat("names")}</label><textarea class="form-control" id="qaNames" style="min-height:160px" placeholder="${esc(qat("ph"))}"></textarea><p class="muted small" style="margin-top:6px">${qat("help")}</p></div><div class="form-group"><label class="form-label" for="qaStock">${qat("stock")}</label><input class="form-control" id="qaStock" type="number" min="0" value="10"></div><button type="button" class="btn btn-primary btn-block" data-qa-go>${qat("go")}</button></div>`,"","lg");
+    }
+    function qaParse(txt){
+      return txt.split(/\r?\n/).map(function(l){return l.trim()}).filter(Boolean).slice(0,40).map(function(l){
+        var p=l.split("|").map(function(x){return x.trim()}),name=p[0],brand="",price=0;
+        if(p.length===2){if(/^[\d\s.,]+$/.test(p[1]))price=Number(p[1].replace(/\s/g,"").replace(",","."))||0;else brand=p[1]}
+        else if(p.length>=3){brand=p[1];price=Number(String(p[2]).replace(/[^\d.,]/g,"").replace(",","."))||0}
+        return {name:name,brand:brand,price:price};
+      }).filter(function(x){return x.name});
+    }
+    async function qaRun(){
+      var cat=document.getElementById("qaCat").value,stock=Math.max(0,parseInt(document.getElementById("qaStock").value,10)||0);
+      var rows=qaParse(document.getElementById("qaNames").value);
+      if(!rows.length){toast(qat("none"),"error");return}
+      var have=new Set(state.products.map(function(p){return String((p.name&&p.name.fr)||"").toLowerCase()}));
+      var made=[],skip=0,fail=0,stamp=Date.now();
+      for(var i=0;i<rows.length;i++){
+        var r=rows[i];
+        if(have.has(r.name.toLowerCase())){skip++;continue}
+        var item={id:"p_"+stamp+"_"+i,name:{fr:r.name,ar:r.name,en:r.name},brand:r.brand,category:cat,desc:{fr:"",ar:"",en:""},price:r.price,compareAt:0,stock:r.price>0?stock:0,image:"",rating:0,reviews:0,featured:false,isNew:true};
+        try{
+          var res=await fetch("/api/admin/products",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(item)});
+          var j=await res.json().catch(function(){return {}});
+          if(res.ok){made.push(j.product||item);have.add(r.name.toLowerCase())}
+          else{fail++;if(res.status===401){toast("Non autorisé","error");break}}
+        }catch(e){fail++}
+      }
+      if(made.length){state.products=made.concat(state.products);persist()}
+      closeModal();renderAdminMain();
+      toast(qat("done").replace("{n}",made.length)+(skip?" · "+qat("skip").replace("{n}",skip):"")+(fail?" · "+qat("fail").replace("{n}",fail):""),fail?"error":undefined);
+    }
+    function qaPick(id){
+      var inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.style.display="none";
+      inp.onchange=async function(){
+        var f=inp.files[0];inp.remove();if(!f)return;
+        toast(qat("up"));
+        try{
+          var bmp=await createImageBitmap(f),sc=Math.min(1,1200/Math.max(bmp.width,bmp.height)),cv=document.createElement("canvas");
+          cv.width=Math.round(bmp.width*sc);cv.height=Math.round(bmp.height*sc);
+          var cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(bmp,0,0,cv.width,cv.height);
+          var blob=await new Promise(function(r){cv.toBlob(r,"image/jpeg",0.85)});
+          var fd=new FormData();fd.append("file",blob,"photo.jpg");
+          var up=await fetch("/api/admin/upload",{method:"POST",body:fd}),uj=await up.json().catch(function(){return {}});
+          if(!up.ok){toast(uj.error||qat("err"),"error");return}
+          var p=state.products.find(function(x){return x.id===id});if(!p)return;
+          var np=Object.assign({},p,{image:uj.url});
+          var pr=await fetch("/api/admin/products/"+encodeURIComponent(id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(np)}),pj=await pr.json().catch(function(){return {}});
+          if(!pr.ok){toast(pj.error||qat("err"),"error");return}
+          state.products=state.products.map(function(x){return x.id===id?(pj.product||np):x});
+          persist();renderAdminMain();toast(qat("ok"));
+        }catch(e){toast(qat("err"),"error")}
+      };
+      document.body.appendChild(inp);inp.click();
+    }
+    document.addEventListener("click",function(e){
+      if(e.target.closest("[data-quick-add]")){openQuickAdd();return}
+      if(e.target.closest("[data-qa-go]")){qaRun();return}
+      var ph=e.target.closest("[data-photo-product]");if(ph)qaPick(ph.dataset.photoProduct);
+    });
     function adminProducts(){
-      return `<div class="admin-head"><div><h1>${t("products")}</h1><p>${state.products.length} ${t("results")}</p></div><button class="btn btn-primary btn-sm" data-new-product>${icon("plus")} ${t("addProduct")}</button></div><div class="table-wrap"><table class="admin-table"><thead><tr><th>${t("product")}</th><th>${t("category")}</th><th>${t("retail")}</th><th>${t("stock")}</th><th></th></tr></thead><tbody>${state.products.map(p=>`<tr><td><div class="table-product"><img src="${safeImage(p.image)}" alt=""><div><strong>${esc(tr(p))}</strong><span>${esc(p.brand)}</span></div></div></td><td>${esc(categoryName(p.category))}</td><td>${money(p.price)}</td><td><span class="badge ${stockClass(p.stock)==="out"?"badge-red":stockClass(p.stock)==="low"?"badge-gold":"badge-green"}">${p.stock}</span></td><td><div class="table-actions"><button data-edit-product="${p.id}" title="${t("edit")}">${icon("pencil")}</button><button class="danger" data-delete-product="${p.id}" title="${t("delete")}">${icon("trash-2")}</button></div></td></tr>`).join("")}</tbody></table></div>`;
+      return `<div class="admin-head"><div><h1>${t("products")}</h1><p>${state.products.length} ${t("results")}</p></div><button class="btn btn-primary btn-sm" data-new-product>${icon("plus")} ${t("addProduct")}</button></div><div style="margin:0 0 14px"><button class="btn btn-outline btn-sm" data-quick-add>⚡ ${qat("btn")}</button></div><div class="table-wrap"><table class="admin-table"><thead><tr><th>${t("product")}</th><th>${t("category")}</th><th>${t("retail")}</th><th>${t("stock")}</th><th></th></tr></thead><tbody>${state.products.map(p=>`<tr><td><div class="table-product"><img src="${safeImage(p.image)}" alt=""><div><strong>${esc(tr(p))}</strong><span>${esc(p.brand)}</span></div></div></td><td>${esc(categoryName(p.category))}</td><td>${money(p.price)}</td><td><span class="badge ${stockClass(p.stock)==="out"?"badge-red":stockClass(p.stock)==="low"?"badge-gold":"badge-green"}">${p.stock}</span></td><td><div class="table-actions"><button type="button" data-photo-product="${p.id}" title="${qat("photo")}">📷</button><button data-edit-product="${p.id}" title="${t("edit")}">${icon("pencil")}</button><button class="danger" data-delete-product="${p.id}" title="${t("delete")}">${icon("trash-2")}</button></div></td></tr>`).join("")}</tbody></table></div>`;
     }
     function adminOrders(){
       const list=state.orders.filter(o=>!adminOrderStatus||o.status===adminOrderStatus);
