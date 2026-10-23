@@ -545,6 +545,30 @@ class _OutOfStock(Exception):
     pass
 
 
+
+@app.route("/api/admin/usage", methods=["GET"])
+def api_admin_usage():
+    g = _admin_db_guard()
+    if g:
+        return g
+    try:
+        init_pg()
+        _ensure_images()
+        _ensure_orders()
+        with pg() as c:
+            db = c.execute("SELECT pg_database_size(current_database()) AS b").fetchone()["b"]
+            pr = c.execute("SELECT count(*) AS n FROM products").fetchone()["n"]
+            im = c.execute("SELECT count(*) AS n, COALESCE(sum(length(data)), 0) AS b FROM product_images").fetchone()
+            od = c.execute("SELECT count(*) AS n FROM orders_v2").fetchone()["n"]
+        return jsonify({
+            "dbBytes": int(db), "limitBytes": 512 * 1024 * 1024,
+            "products": int(pr), "images": int(im["n"]),
+            "imageBytes": int(im["b"]), "orders": int(od),
+        })
+    except Exception:
+        app.logger.exception("Lecture de l'espace utilisé")
+        return jsonify({"error": "Erreur serveur"}), 500
+
 # ===== Fin produits =====
 
 if __name__ == "__main__":

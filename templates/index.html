@@ -407,6 +407,9 @@
 .ast-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:15px}
 .ast-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px}
 @media(max-width:780px){.ast-kpis{grid-template-columns:1fr}.ast-grid{grid-template-columns:1fr}}
+
+/* ===== Espace des données ===== */
+.ast-kpis .kpi strong{font-size:26px}
 </style>
 </head>
 <body>
@@ -1225,6 +1228,7 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
     }
     function renderAdminMain(){
       const el=document.getElementById("adminMain");if(!el)return;
+      if(adminTab==="dashboard"&&!usageData&&!window.__usageAsked){window.__usageAsked=true;loadUsage()}
       if(adminTab==="dashboard")el.innerHTML=adminDashboard();
       if(adminTab==="products")el.innerHTML=adminProducts();
       if(adminTab==="orders")el.innerHTML=adminOrders();
@@ -1244,7 +1248,7 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
         <div class="kpi-grid"><div class="kpi"><div class="kpi-icon">${icon("shopping-bag")}</div><strong>${state.orders.length}</strong><span>${t("orders")}</span></div><div class="kpi"><div class="kpi-icon">${icon("banknote")}</div><strong>${num(revenue)} DA</strong><span>${t("revenue")}</span></div><div class="kpi"><div class="kpi-icon">${icon("package")}</div><strong>${state.products.length}</strong><span>${t("products")}</span></div><div class="kpi"><div class="kpi-icon">${icon("triangle-alert")}</div><strong>${low}</strong><span>${t("lowStockCount")}</span></div></div>
         <div class="admin-grid-2"><div class="admin-card"><h3>${t("revenue")}</h3><div class="chart-bars">${months.map((d,i)=>`<div class="chart-row"><span>${d.toLocaleDateString(lang==="ar"?"ar-DZ":lang==="en"?"en-DZ":"fr-DZ",{month:"short"})}</span><div class="chart-track"><div class="chart-fill" style="width:${values[i]/max*100}%"></div></div><strong>${num(values[i])}</strong></div>`).join("")}</div></div>
         <div class="admin-card"><h3>${t("customerCount")}</h3><strong style="font-size:48px;font-family:var(--font-title)">${customers}</strong><p class="muted small">${state.leads.length} ${t("wholesaleLead")}</p></div></div>
-        ${adminStatsHTML()}<div class="admin-card" style="margin-top:15px"><div class="admin-head" style="margin-bottom:10px"><h3 style="margin:0">${t("recentOrders")}</h3><button class="btn btn-sm btn-soft" data-admin-tab="orders">${t("viewDetails")}</button></div>${recentOrdersTable(state.orders.slice(0,6))}</div>`;
+        ${adminStatsHTML()}${usageCardHTML()}<div class="admin-card" style="margin-top:15px"><div class="admin-head" style="margin-bottom:10px"><h3 style="margin:0">${t("recentOrders")}</h3><button class="btn btn-sm btn-soft" data-admin-tab="orders">${t("viewDetails")}</button></div>${recentOrdersTable(state.orders.slice(0,6))}</div>`;
     }
     var ST_T={
 fr:{best:"Meilleures ventes",qty:"vendu(s)",none:"Aucune vente pour le moment",avg:"Panier moyen",week:"Commandes (7 jours)",units:"Articles vendus",wil:"Top wilayas",stat:"Commandes par statut",low:"Stock faible",lowok:"Aucun produit en stock faible",out:"Rupture"},
@@ -1252,6 +1256,26 @@ ar:{best:"الأكثر مبيعاً",qty:"مباع",none:"لا توجد مبيع
 en:{best:"Best sellers",qty:"sold",none:"No sales yet",avg:"Average basket",week:"Orders (7 days)",units:"Items sold",wil:"Top wilayas",stat:"Orders by status",low:"Low stock",lowok:"No low-stock products",out:"Out of stock"}
 };
     function stt(k){return (ST_T[lang]||ST_T.fr)[k]}
+    var US_T={
+fr:{title:"Espace des données",used:"utilisé",of:"sur",products:"Produits",images:"Images",orders:"Commandes",imgSize:"Poids des images",wait:"Chargement…",err:"Non disponible",ok:"Espace suffisant",warn:"Espace à surveiller",crit:"Espace presque plein"},
+ar:{title:"مساحة البيانات",used:"مستعمل",of:"من",products:"المنتجات",images:"الصور",orders:"الطلبات",imgSize:"حجم الصور",wait:"جارٍ التحميل…",err:"غير متاح",ok:"المساحة كافية",warn:"المساحة تحتاج إلى مراقبة",crit:"المساحة شبه ممتلئة"},
+en:{title:"Data storage",used:"used",of:"of",products:"Products",images:"Images",orders:"Orders",imgSize:"Images size",wait:"Loading…",err:"Unavailable",ok:"Plenty of space",warn:"Keep an eye on space",crit:"Storage almost full"}
+};
+    function ust(k){return (US_T[lang]||US_T.fr)[k]}
+    var usageData=null;
+    function fmtBytes(b){return b>=1073741824?(b/1073741824).toFixed(2)+" Go":b>=1048576?(b/1048576).toFixed(1)+" Mo":Math.max(1,Math.round(b/1024))+" Ko"}
+    function usageCardHTML(){
+      if(!usageData)return `<div class="admin-card" style="margin-top:15px"><h3>${ust("title")}</h3><p class="muted small">${ust("wait")}</p></div>`;
+      if(usageData.error)return `<div class="admin-card" style="margin-top:15px"><h3>${ust("title")}</h3><p class="muted small">${ust("err")}</p></div>`;
+      var u=usageData,pct=Math.min(100,u.dbBytes/u.limitBytes*100),col=pct>=85?"var(--danger)":pct>=60?"var(--warning)":"var(--success)",msg=pct>=85?ust("crit"):pct>=60?ust("warn"):ust("ok");
+      return `<div class="admin-card" style="margin-top:15px"><h3>${ust("title")}</h3><div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:8px"><strong>${fmtBytes(u.dbBytes)} ${ust("used")}</strong><span class="muted">${ust("of")} ${fmtBytes(u.limitBytes)}</span></div><div class="chart-track" style="height:12px"><div style="height:100%;width:${Math.max(2,pct)}%;background:${col};border-radius:99px"></div></div><p class="muted small" style="margin-top:8px">${pct.toFixed(1)}% — ${msg}</p><div class="ast-kpis" style="margin-top:14px"><div class="kpi"><strong>${u.products}</strong><span>${ust("products")}</span></div><div class="kpi"><strong>${u.images}</strong><span>${ust("images")} · ${fmtBytes(u.imageBytes)}</span></div><div class="kpi"><strong>${u.orders}</strong><span>${ust("orders")}</span></div></div></div>`;
+    }
+    function loadUsage(){
+      fetch("/api/admin/usage").then(function(r){return r.ok?r.json():{error:1}}).catch(function(){return {error:1}}).then(function(d){
+        usageData=d;
+        if(typeof adminSession!=="undefined"&&adminSession&&adminTab==="dashboard"&&document.getElementById("adminMain"))renderAdminMain();
+      });
+    }
     function adminStatsHTML(){
       const real=state.orders.filter(o=>!o.demo&&o.status!=="cancelled");
       const sold={};let units=0;
