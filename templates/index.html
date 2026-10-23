@@ -1417,7 +1417,7 @@ ar:{title:"صور المنتجات",sub:"ابحث عن منتج ثم أضف صو
 en:{title:"Product photos",sub:"Search a product, then add or replace its photo. Price, stock and description stay unchanged.",ph:"Type the first letters of the name…",none:"No product found",pick:"Choose a photo",current:"Current photo",newp:"New photo",save:"Save photo",cancel:"Cancel",saving:"Saving…",saved:"Photo saved",err:"Could not save",hint:"Choose a photo from your device."}
 };
     function pht(k){return (PH_T[lang]||PH_T.fr)[k]}
-    var phQuery="",phSel="",phBlob=null,phPrev="",phBusy=false;
+    var phQuery="",phSel="",phBlob=null,phPrev="",phBusy=false,phWebQuery="",phSuggestions=[],phSuggestTimer=null,phSuggestSeq=0;
     function phNorm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}
     function phMatches(q){
       q=phNorm(q).replace(/\\s+/g," ");
@@ -1458,7 +1458,7 @@ en:{title:"Product photos",sub:"Search a product, then add or replace its photo.
       return '<div class="ph-sel"><div class="ph-cols"><div><span class="muted small">'+esc(pht("current"))+'</span><img class="ph-big" src="'+esc(safeImage(p.image))+'" alt=""></div>'+(phPrev?'<div><span class="muted small">'+esc(pht("newp"))+'</span><img class="ph-big" src="'+esc(phPrev)+'" alt=""></div>':"")+'</div><strong>'+esc(tr(p))+'</strong><p class="muted small">'+esc(pht("hint"))+'</p><div class="ph-actions"><button type="button" class="btn btn-outline btn-sm" data-ph-file>'+esc(pht("pick"))+'</button>'+(phBlob?'<button type="button" class="btn btn-primary btn-sm" data-ph-save '+(phBusy?"disabled":"")+'>'+esc(pht(phBusy?"saving":"save"))+'</button>':"")+'<button type="button" class="btn btn-outline btn-sm" data-ph-cancel>'+esc(pht("cancel"))+'</button></div></div>';
     }
     function photoPanelHTML(){
-      return '<div class="admin-card ph-panel" style="margin-bottom:15px"><h3>'+esc(pht("title"))+'</h3><p class="muted small" style="margin-bottom:10px">'+esc(pht("sub"))+'</p><label class="small" for="phSearch">1. '+esc(pht("ph"))+'</label><input class="form-control" id="phSearch" type="search" autocomplete="off" placeholder="'+esc(pht("ph"))+'" value="'+esc(phQuery)+'"><div id="phResults" class="ph-results">'+(phSel?"":phResultsHTML())+'</div><div style="margin:12px 0;padding:12px;border:1px solid var(--border,#ddd);border-radius:10px"><strong>2. Recherche sur Internet</strong><p class="muted small">Saisissez le nom du produit ci-dessus, puis choisissez un site :</p><div class="ph-actions"><button type="button" class="btn btn-soft btn-sm" data-ph-external="pinterest">Pinterest</button><button type="button" class="btn btn-soft btn-sm" data-ph-external="google">Google Images</button><button type="button" class="btn btn-soft btn-sm" data-ph-external="bing">Bing Images</button></div></div><div id="phSelected">'+phSelectedHTML()+'</div></div>';
+      return '<div class="admin-card ph-panel" style="margin-bottom:15px"><h3>'+esc(pht("title"))+'</h3><p class="muted small" style="margin-bottom:10px">'+esc(pht("sub"))+'</p><label class="small" for="phSearch">1. '+esc(pht("ph"))+'</label><input class="form-control" id="phSearch" type="search" autocomplete="off" placeholder="'+esc(pht("ph"))+'" value="'+esc(phQuery)+'"><div id="phResults" class="ph-results">'+(phSel?"":phResultsHTML())+'</div><div style="margin:12px 0;padding:12px;border:1px solid var(--border,#ddd);border-radius:10px"><strong>2. Recherche sur Internet</strong><p class="muted small">Tapez un nom de produit ou une marque :</p><input class="form-control" id="phWebQuery" type="search" autocomplete="off" placeholder="Ex. CeraVe, Nivea, La Roche-Posay"><div id="phSuggestions" class="ph-results"></div><p class="muted small">Choisissez une suggestion pour ouvrir ses images sur Google.</p><div class="ph-actions"><button type="button" class="btn btn-soft btn-sm" data-ph-external="pinterest">Pinterest</button><button type="button" class="btn btn-soft btn-sm" data-ph-external="google">Google Images</button><button type="button" class="btn btn-soft btn-sm" data-ph-external="bing">Bing Images</button></div></div><div id="phSelected">'+phSelectedHTML()+'</div></div>';
     }
     function phRefresh(){
       var r=document.getElementById("phResults"),s=document.getElementById("phSelected");
@@ -1506,6 +1506,43 @@ en:{title:"Product photos",sub:"Search a product, then add or replace its photo.
       if(phPrev){URL.revokeObjectURL(phPrev);phPrev=""}
       phRefresh();
     });
+
+    document.addEventListener("input",function(e){
+      if(!e.target||e.target.id!=="phWebQuery")return;
+      phWebQuery=e.target.value;
+      var seq=++phSuggestSeq;
+      clearTimeout(phSuggestTimer);
+      var box=document.getElementById("phSuggestions");
+      if(!box)return;
+      if(phWebQuery.trim().length<2){
+        phSuggestions=[];box.innerHTML="";return;
+      }
+      box.innerHTML='<p class="muted small">Recherche des produits…</p>';
+      phSuggestTimer=setTimeout(async function(){
+        try{
+          var r=await fetch("/api/admin/photo-suggestions?q="+encodeURIComponent(phWebQuery.trim()));
+          var j=await r.json();
+          if(seq!==phSuggestSeq)return;
+          phSuggestions=r.ok&&Array.isArray(j)?j:[];
+          box.innerHTML=phSuggestions.length
+            ?phSuggestions.map(function(p,i){
+              return '<button type="button" class="ph-res" data-ph-suggestion="'+i+'"><span><strong>'+esc(p.name)+'</strong><small>'+esc(p.brand||"Marque non précisée")+'</small></span></button>';
+            }).join("")
+            :'<p class="muted small">Aucune suggestion trouvée. Essayez un autre nom.</p>';
+        }catch(err){
+          if(seq===phSuggestSeq)box.innerHTML='<p class="muted small">Suggestions indisponibles. Réessayez.</p>';
+        }
+      },350);
+    });
+    document.addEventListener("click",function(e){
+      var b=e.target.closest&&e.target.closest("[data-ph-suggestion]");
+      if(!b)return;
+      var p=phSuggestions[Number(b.getAttribute("data-ph-suggestion"))];
+      if(!p)return;
+      var q=[p.name,p.brand].filter(Boolean).join(" ");
+      window.open("https://www.google.com/search?tbm=isch&q="+encodeURIComponent(q),"_blank","noopener");
+    });
+
     document.addEventListener("keydown",function(e){
       if(e.key!=="Enter"||!e.target||e.target.id!=="phSearch")return;
       e.preventDefault();var l=phMatches(phQuery);if(l.length)phChoose(l[0].id);
@@ -1577,7 +1614,7 @@ en:{btn:"Search a photo online",wait:"Searching…",none:"No photo found. Try an
     document.addEventListener("click",function(e){
       var b=e.target.closest&&e.target.closest("[data-ph-external]");
       if(!b)return;
-      var q=String((document.getElementById("phSearch")||{}).value||"").trim();
+      var q=String((document.getElementById("phWebQuery")||{}).value||"").trim();
       if(q.length<2){toast("Saisissez d’abord le nom du produit","error");return}
       var site=b.getAttribute("data-ph-external");
       var urls={

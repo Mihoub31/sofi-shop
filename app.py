@@ -636,6 +636,40 @@ def api_photo_search():
     return jsonify(out)
 
 
+
+@app.route("/api/admin/photo-suggestions", methods=["GET"])
+def api_photo_suggestions():
+    if not is_admin():
+        return jsonify({"error": "Non autorisé"}), 401
+    q = (request.args.get("q") or "").strip()[:80]
+    if len(q) < 2:
+        return jsonify([])
+    url = "https://world.openbeautyfacts.org/cgi/search.pl?" + _up.urlencode({
+        "search_terms": q, "search_simple": 1, "action": "process",
+        "json": 1, "page_size": 20,
+        "fields": "product_name,brands"
+    })
+    try:
+        data = _json.loads(
+            _obf_fetch(url, 1024 * 1024).decode("utf-8", "replace")
+        )
+    except Exception:
+        app.logger.exception("Suggestions de produits")
+        return jsonify({"error": "Suggestions indisponibles"}), 502
+    out, seen = [], set()
+    for p in data.get("products") or []:
+        name = str(p.get("product_name") or "").strip()[:120]
+        brand = str(p.get("brands") or "").strip()[:80]
+        key = (name.casefold(), brand.casefold())
+        if not name or key in seen:
+            continue
+        seen.add(key)
+        out.append({"name": name, "brand": brand})
+        if len(out) >= 10:
+            break
+    return jsonify(out)
+
+
 @app.route("/api/admin/photo-import", methods=["POST"])
 def api_photo_import():
     g = _admin_db_guard()
