@@ -1025,24 +1025,33 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
     function renderPackBuilder(){
       const box=document.getElementById("packBuilder");if(!box)return;
       const items=state.products.filter(p=>p.stock>0);
-      let qty=0,sum=0,max=0;
-      items.forEach(p=>{const q=packSel[p.id]||0;if(q>0){qty+=q;sum+=q*Number(p.price);max=Math.max(max,Number(p.price))}});
-      const ok=qty>=3,rate=packRate(max),disc=ok?Math.round(sum*rate*100)/100:0;
-      const rows=items.map(p=>`<div class="summary-line" style="align-items:center;gap:10px"><img src="${safeImage(p.image)}" alt="" style="width:44px;height:44px;border-radius:10px;object-fit:cover"><span style="flex:1;font-size:12px">${esc(tr(p))}<br><small class="muted">${money(p.price)}</small></span><span style="display:flex;align-items:center;gap:8px"><button type="button" class="btn btn-outline btn-sm" data-pack-dec="${esc(p.id)}">−</button><strong>${packSel[p.id]||0}</strong><button type="button" class="btn btn-outline btn-sm" data-pack-inc="${esc(p.id)}">+</button></span></div>`).join("");
+      const selected=items.filter(p=>(packSel[p.id]||0)>0).slice(0,3);
+      const qty=selected.length;
+      let sum=0,max=0;
+      selected.forEach(p=>{sum+=Number(p.price);max=Math.max(max,Number(p.price))});
+      const ok=qty===3,rate=packRate(max),disc=ok?Math.round(sum*rate*100)/100:0;
+      const preview=ok
+        ? `<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:#fff;padding:8px;border-radius:14px;border:1px solid var(--beige)">${selected.map(p=>`<div style="text-align:center;min-width:0"><img src="${safeImage(p.image)}" alt="${esc(tr(p))}" style="width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:10px;background:#fff"><div style="font-size:10px;margin-top:5px;overflow-wrap:anywhere">${esc(tr(p))}</div></div>`).join("")}</div>`
+        : `<div style="padding:18px;text-align:center;border:1px dashed var(--beige);border-radius:14px;color:var(--muted)">${pt("min3")} — ${qty}/3</div>`;
+      const rows=items.map(p=>{
+        const q=packSel[p.id]||0;
+        const blocked=!q&&qty>=3;
+        return `<div class="summary-line" style="align-items:center;gap:10px"><img src="${safeImage(p.image)}" alt="" style="width:44px;height:44px;border-radius:10px;object-fit:cover"><span style="flex:1;font-size:12px">${esc(tr(p))}<br><small class="muted">${money(p.price)}</small></span><span style="display:flex;align-items:center;gap:8px"><button type="button" class="btn btn-outline btn-sm" data-pack-dec="${esc(p.id)}" ${q?"":"disabled"}>−</button><strong>${q?1:0}</strong><button type="button" class="btn btn-outline btn-sm" data-pack-inc="${esc(p.id)}" ${q||blocked?"disabled":""}>+</button></span></div>`;
+      }).join("");
       const remiseTxt=ok?"−"+money(disc):(qty>0?pt("more").replace("{n}",3-qty):pt("min3"));
-      box.innerHTML=`<div style="max-height:46vh;overflow:auto;display:grid;gap:8px">${rows}</div><div style="margin-top:14px;padding:14px;border:1px solid var(--beige);border-radius:14px;background:var(--pink-50)"><div class="summary-line"><span>${pt("items")}</span><strong>${qty}</strong></div><div class="summary-line"><span>${pt("total")}</span><strong>${money(sum)}</strong></div><div class="summary-line"><span>${ok?pt("discount")+" "+Math.round(rate*100)+"%":pt("discount")}</span><strong>${remiseTxt}</strong></div><div class="summary-line total"><span>${pt("packTotal")}</span><strong>${money(sum-disc)}</strong></div></div><button type="button" class="btn btn-primary btn-block" style="margin-top:12px" data-pack-add ${ok?"":"disabled"}>${pt("addPack")}</button>`;
+      box.innerHTML=`<div style="display:grid;gap:12px"><div><strong>${pt("title")}</strong><p class="muted" style="font-size:12px">Sélectionnez 3 produits différents pour composer votre pack.</p>${preview}</div><div style="max-height:35vh;overflow:auto;display:grid;gap:8px">${rows}</div><div style="padding:14px;border:1px solid var(--beige);border-radius:14px;background:var(--pink-50)"><div class="summary-line"><span>${pt("items")}</span><strong>${qty}/3</strong></div><div class="summary-line"><span>${pt("total")}</span><strong>${money(sum)}</strong></div><div class="summary-line"><span>${ok?pt("discount")+" "+Math.round(rate*100)+"%":pt("discount")}</span><strong>${remiseTxt}</strong></div><div class="summary-line total"><span>${pt("packTotal")}</span><strong>${money(sum-disc)}</strong></div></div><button type="button" class="btn btn-primary btn-block" style="margin-top:4px" data-pack-add ${ok?"":"disabled"}>${pt("addPack")}</button></div>`;
     }
     document.addEventListener("click",e=>{
       if(e.target.closest("[data-pack-open]")){packSel={};showModal("🎁 "+pt("title"),'<div id="packBuilder"></div>',"","lg");renderPackBuilder();return}
       const inc=e.target.closest("[data-pack-inc]");
-      if(inc){const id=inc.dataset.packInc,p=state.products.find(x=>x.id===id);if(p){packSel[id]=Math.min(p.stock,(packSel[id]||0)+1);renderPackBuilder()}return}
+      if(inc){const id=inc.dataset.packInc,p=state.products.find(x=>x.id===id);if(p){if(!packSel[id]){if(Object.values(packSel).filter(q=>q>0).length>=3){toast(pt("min3toast"),"error");return}packSel[id]=1}renderPackBuilder()}return}
       const dec=e.target.closest("[data-pack-dec]");
       if(dec){const id=dec.dataset.packDec;packSel[id]=Math.max(0,(packSel[id]||0)-1);renderPackBuilder();return}
       const add=e.target.closest("[data-pack-add]");
       if(add&&!add.disabled){
         const sel=Object.entries(packSel).filter(([,q])=>q>0);
         const qty=sel.reduce((s,[,q])=>s+q,0);
-        if(qty<3){toast(pt("min3toast"),"error");return}
+        if(sel.length!==3||qty!==3){toast(pt("min3toast"),"error");return}
         for(const [id,q] of sel){
           const p=state.products.find(x=>x.id===id);
           const inCart=state.cart.filter(l=>l.productId===id).reduce((s,l)=>s+l.quantity,0);
@@ -1086,7 +1095,7 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
       content.innerHTML=state.cart.map(line=>{
         const p=state.products.find(x=>x.id===line.productId);if(!p)return "";
         const u=unitPrice(p,line.mode,line.quantity);
-        return `<div class="cart-item"><img src="${safeImage(p.image)}" alt="${esc(tr(p))}"><div><span class="brand">${esc(p.brand)}</span><h3>${esc(tr(p))}</h3><span class="badge badge-pink">${t("retail")}</span><div style="margin-top:9px"><div class="qty-control"><button data-cart-dec="${p.id}|${line.mode}">−</button><span>${line.quantity}</span><button data-cart-inc="${p.id}|${line.mode}">+</button></div></div></div><div class="cart-item-side"><strong>${money(u*line.quantity)}</strong><div class="small muted">${money(u)} / ${t("unitPrice")}</div><button class="remove-btn" data-cart-remove="${p.id}|${line.mode}">${t("remove")}</button></div></div>`;
+        return `<div class="cart-item"><img src="${safeImage(p.image)}" alt="${esc(tr(p))}" style="width:76px;height:76px;object-fit:contain;background:#fff;border-radius:10px;display:block" loading="eager"><div><span class="brand">${esc(p.brand)}</span><h3>${esc(tr(p))}</h3><span class="badge badge-pink">${line.mode==="pack"?pt("title"):t("retail")}</span><div style="margin-top:9px"><div class="qty-control"><button data-cart-dec="${p.id}|${line.mode}">−</button><span>${line.quantity}</span><button data-cart-inc="${p.id}|${line.mode}">+</button></div></div></div><div class="cart-item-side"><strong>${money(u*line.quantity)}</strong><div class="small muted">${money(u)} / ${t("unitPrice")}</div><button class="remove-btn" data-cart-remove="${p.id}|${line.mode}">${t("remove")}</button></div></div>`;
       }).join("");
       const totals=cartTotals(cartWilaya,cartMethod);
       const d=cartWilaya?state.settings.delivery[cartWilaya]:null;
@@ -1154,7 +1163,7 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
     }
     function updateCheckoutSummary(){
       const items=document.getElementById("checkoutItems"),totalsBox=document.getElementById("checkoutTotals");if(!items)return;
-      items.innerHTML=state.cart.map(l=>{const p=state.products.find(x=>x.id===l.productId);if(!p)return"";return`<div class="checkout-item"><img src="${safeImage(p.image)}" alt=""><div><strong>${esc(tr(p))}</strong><span>${l.quantity} × ${money(unitPrice(p,l.mode,l.quantity))}</span><span>${t("retail")}</span></div></div>`}).join("");
+      items.innerHTML=state.cart.map(l=>{const p=state.products.find(x=>x.id===l.productId);if(!p)return"";return`<div class="checkout-item"><img src="${safeImage(p.image)}" alt=""><div><strong>${esc(tr(p))}</strong><span>${l.quantity} × ${money(unitPrice(p,l.mode,l.quantity))}</span><span>${l.mode==="pack"?pt("title"):t("retail")}</span></div></div>`}).join("");
       const wilaya=document.getElementById("coWilaya")?.value||checkoutWilaya;
       const method=document.querySelector('input[name="delivery"]:checked')?.value||checkoutMethod;
       const totals=cartTotals(wilaya,method);
@@ -1203,7 +1212,7 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
         <div class="order-steps">${steps.map((s,i)=>`<div class="order-step ${i<=current?"done":""}"><i>${i<current?"✓":i+1}</i><span>${t(s)}</span></div>`).join("")}</div>
         <div class="order-details-grid">
           <div class="order-detail-box"><h3>${t("orderCustomerInfo")}</h3><p><strong>${esc(order.customer.name)}</strong><br>${esc(order.customer.phone)}<br>${esc(order.customer.commune)}, ${esc(wilayas.find(w=>w.code===order.customer.wilaya)?.[lang==="ar"?"ar":"fr"]||"")}<br>${esc(order.customer.address)}</p></div>
-          <div class="order-detail-box"><h3>${t("orderSummary")}</h3><p>${order.items.map(i=>`${esc(i.name)} × ${i.qty} — ${money(i.total)}`).join("<br>")}<br><br><strong>${t("grandTotal")}: ${money(order.totals.total)}</strong><br>${t("payment")}: ${t("cod")}</p></div>
+          <div class="order-detail-box"><h3>${t("orderSummary")}</h3><p>${order.items.map(i=>`${i.mode==="pack"?"🎁 "+pt("title")+" — ":""}${esc(i.name)} × ${i.qty} — ${money(i.total)}`).join("<br>")}<br><br><strong>${t("grandTotal")}: ${money(order.totals.total)}</strong><br>${t("payment")}: ${t("cod")}</p></div>
         </div>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:25px"><a href="${whatsappLink(waText)}" target="_blank" rel="noopener" class="btn btn-primary">${icon("message-circle")} ${t("whatsappOrder")}</a><button class="btn btn-outline" data-print>${icon("printer")} ${t("print")}</button><a href="#shop" class="btn btn-soft" data-route="shop">${t("continueShopping")}</a></div>
       </div></div></section>`;
