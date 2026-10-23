@@ -425,6 +425,15 @@
 .admin-page .ph-res{background:#1a1d21;border-color:#3b4047;color:#f3ece8}
 .admin-page .ph-res:hover{border-color:#d98298}
 .admin-page .ph-big{border-color:#3b4047}
+
+/* ===== Photos en ligne (admin) ===== */
+.ph-web{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-top:6px}
+.ph-webc{display:grid;gap:6px;padding:6px;border-radius:12px;border:2px solid var(--beige);background:var(--ivory);color:var(--ink);cursor:pointer;font:inherit;text-align:start}
+.ph-webc img{width:100%;height:110px;object-fit:contain;border-radius:8px;background:#fff}
+.ph-webc small{font-size:10px;line-height:1.3;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ph-webc.on{border-color:var(--pink-500)}
+.admin-page .ph-webc{background:#1a1d21;border-color:#3b4047;color:#f3ece8}
+.admin-page .ph-webc.on{border-color:#d98298}
 </style>
 </head>
 <body>
@@ -1388,7 +1397,7 @@ en:{btn:"Quick add",title:"Quick add products",cat:"Category",names:"One product
           var up=await fetch("/api/admin/upload",{method:"POST",body:fd}),uj=await up.json().catch(function(){return {}});
           if(!up.ok){toast(uj.error||qat("err"),"error");return}
           var p=state.products.find(function(x){return x.id===id});if(!p)return;
-          var np=Object.assign({},p,{image:uj.url});
+          var np=Object.assign({},p,{image:uj.url});delete np.credit;
           var pr=await fetch("/api/admin/products/"+encodeURIComponent(id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(np)}),pj=await pr.json().catch(function(){return {}});
           if(!pr.ok){toast(pj.error||qat("err"),"error");return}
           state.products=state.products.map(function(x){return x.id===id?(pj.product||np):x});
@@ -1470,7 +1479,7 @@ en:{title:"Product photos",sub:"Search a product, then add or replace its photo.
         var fd=new FormData();fd.append("file",phBlob,"photo.jpg");
         var up=await fetch("/api/admin/upload",{method:"POST",body:fd}),uj=await up.json().catch(function(){return null});
         if(!up.ok||!uj||!uj.url)throw new Error((uj&&uj.error)||"");
-        var np=Object.assign({},p,{image:uj.url});
+        var np=Object.assign({},p,{image:uj.url});delete np.credit;
         var pr=await fetch("/api/admin/products/"+encodeURIComponent(p.id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(np)}),pj=await pr.json().catch(function(){return null});
         if(!pr.ok)throw new Error((pj&&pj.error)||"");
         var saved=(pj&&pj.product)||np;
@@ -1500,6 +1509,77 @@ en:{title:"Product photos",sub:"Search a product, then add or replace its photo.
         if(phPrev){URL.revokeObjectURL(phPrev);phPrev=""}
         var i=document.getElementById("phSearch");if(i)i.value="";
         phRefresh();
+      }
+    });
+    var PW_T={
+fr:{btn:"Chercher une photo en ligne",wait:"Recherche…",none:"Aucune photo trouvée. Essayez un autre nom.",err:"Recherche impossible pour le moment",credit:"Photos : Open Beauty Facts (licence CC BY-SA). Vérifiez que l'emballage correspond bien à votre produit."},
+ar:{btn:"البحث عن صورة على الإنترنت",wait:"جارٍ البحث…",none:"لم يتم العثور على صورة. جرّب اسماً آخر.",err:"تعذّر البحث حالياً",credit:"الصور: Open Beauty Facts (رخصة CC BY-SA). تأكد أن العبوة تطابق منتجك."},
+en:{btn:"Search a photo online",wait:"Searching…",none:"No photo found. Try another name.",err:"Search unavailable right now",credit:"Photos: Open Beauty Facts (CC BY-SA licence). Check that the packaging matches your product."}
+};
+    function pwt(k){return (PW_T[lang]||PW_T.fr)[k]}
+    var phWeb=null,phWebFor="",phWebBusy=false,phWebPick=null;
+    function phChoose(id){
+      phSel=id;phBlob=null;phWebPick=null;phWeb=null;phWebFor="";
+      if(phPrev&&phPrev.indexOf("blob:")===0)URL.revokeObjectURL(phPrev);
+      phPrev="";phRefresh();
+    }
+    function phSelectedHTML(){
+      var p=state.products.find(function(x){return x.id===phSel});
+      if(!p)return "";
+      var web="";
+      if(phWebFor===phSel){
+        if(phWebBusy)web='<p class="muted small">'+esc(pwt("wait"))+'</p>';
+        else if(phWeb&&!Array.isArray(phWeb))web='<p class="muted small">'+esc(pwt("err"))+'</p>';
+        else if(phWeb&&!phWeb.length)web='<p class="muted small">'+esc(pwt("none"))+'</p>';
+        else if(phWeb)web='<div class="ph-web">'+phWeb.map(function(r,i){return '<button type="button" class="ph-webc'+(phWebPick&&phWebPick.image===r.image?" on":"")+'" data-ph-use="'+i+'"><img src="'+esc(r.thumb||r.image)+'" alt="" loading="lazy"><small>'+esc((r.brand?r.brand+" · ":"")+r.name)+'</small></button>'}).join("")+'</div><p class="muted small">'+esc(pwt("credit"))+'</p>';
+      }
+      var has=!!(phBlob||phWebPick);
+      return '<div class="ph-sel"><div class="ph-cols"><div><span class="muted small">'+esc(pht("current"))+'</span><img class="ph-big" src="'+esc(safeImage(p.image))+'" alt=""></div>'+(phPrev?'<div><span class="muted small">'+esc(pht("newp"))+'</span><img class="ph-big" src="'+esc(phPrev)+'" alt=""></div>':"")+'</div><strong>'+esc(tr(p))+'</strong><p class="muted small">'+esc(pht("hint"))+'</p><div class="ph-actions"><button type="button" class="btn btn-outline btn-sm" data-ph-file>'+esc(pht("pick"))+'</button><button type="button" class="btn btn-soft btn-sm" data-ph-web>🔎 '+esc(pwt("btn"))+'</button>'+(has?'<button type="button" class="btn btn-primary btn-sm" data-ph-save '+(phBusy?"disabled":"")+'>'+esc(pht(phBusy?"saving":"save"))+'</button>':"")+'<button type="button" class="btn btn-outline btn-sm" data-ph-cancel>'+esc(pht("cancel"))+'</button></div>'+web+'</div>';
+    }
+    async function phSave(){
+      if(phBusy||!phSel||!(phBlob||phWebPick))return;
+      var p=state.products.find(function(x){return x.id===phSel});if(!p)return;
+      phBusy=true;phRefresh();
+      try{
+        var url,credit="";
+        if(phBlob){
+          var fd=new FormData();fd.append("file",phBlob,"photo.jpg");
+          var up=await fetch("/api/admin/upload",{method:"POST",body:fd}),uj=await up.json().catch(function(){return null});
+          if(!up.ok||!uj||!uj.url)throw new Error((uj&&uj.error)||"");
+          url=uj.url;
+        }else{
+          var ir=await fetch("/api/admin/photo-import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:phWebPick.image})}),ij=await ir.json().catch(function(){return null});
+          if(!ir.ok||!ij||!ij.url)throw new Error((ij&&ij.error)||"");
+          url=ij.url;credit="Open Beauty Facts (CC BY-SA)";
+        }
+        var np=Object.assign({},p,{image:url});delete np.credit;if(credit)np.credit=credit;
+        var pr=await fetch("/api/admin/products/"+encodeURIComponent(p.id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(np)}),pj=await pr.json().catch(function(){return null});
+        if(!pr.ok)throw new Error((pj&&pj.error)||"");
+        var saved=(pj&&pj.product)||np;
+        state.products=state.products.map(function(x){return x.id===p.id?saved:x});
+        persist();
+        phBlob=null;phWebPick=null;phWeb=null;phWebFor="";
+        if(phPrev&&phPrev.indexOf("blob:")===0)URL.revokeObjectURL(phPrev);
+        phPrev="";phBusy=false;toast(pht("saved"));renderAdminMain();
+      }catch(err){phBusy=false;toast((err&&err.message)||pht("err"),"error");phRefresh()}
+    }
+    document.addEventListener("click",async function(e){
+      if(e.target.closest&&e.target.closest("[data-ph-web]")){
+        var p=state.products.find(function(x){return x.id===phSel});if(!p)return;
+        phWebFor=phSel;phWeb=null;phWebBusy=true;phWebPick=null;phRefresh();
+        try{
+          var r=await fetch("/api/admin/photo-search?q="+encodeURIComponent(String((p.name&&p.name.fr)||"").trim()));
+          var j=await r.json().catch(function(){return null});
+          phWeb=(r.ok&&Array.isArray(j))?j:{error:true};
+        }catch(err){phWeb={error:true}}
+        phWebBusy=false;phRefresh();return;
+      }
+      var u=e.target.closest&&e.target.closest("[data-ph-use]");
+      if(u&&Array.isArray(phWeb)){
+        var it=phWeb[+u.getAttribute("data-ph-use")];if(!it)return;
+        phWebPick=it;phBlob=null;
+        if(phPrev&&phPrev.indexOf("blob:")===0)URL.revokeObjectURL(phPrev);
+        phPrev=it.thumb||it.image;phRefresh();
       }
     });
     function adminProducts(){

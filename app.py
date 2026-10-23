@@ -340,6 +340,7 @@ def clean_product(d, pid):
         "stock": int(stock), "image": image, "rating": rating,
         "reviews": int(reviews), "featured": bool(d.get("featured")),
         "isNew": bool(d.get("isNew")),
+        **({"credit": d["credit"].strip()[:120]} if isinstance(d.get("credit"), str) and d["credit"].strip() else {}),
     }
 
 
@@ -567,6 +568,99 @@ def api_admin_usage():
         })
     except Exception:
         app.logger.exception("Lecture de l'espace utilisé")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+
+import urllib.request as _ur
+import urllib.parse as _up
+
+
+def _obf_host_ok(u):
+    try:
+        p = _up.urlparse(u)
+    except Exception:
+        return False
+    host = (p.hostname or "").lower()
+    return p.scheme == "https" and (host == "openbeautyfacts.org" or host.endswith(".openbeautyfacts.org"))
+
+
+class _ObfRedirect(_ur.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not _obf_host_ok(newurl):
+            return None
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_obf_opener = _ur.build_opener(_ObfRedirect)
+
+
+def _obf_fetch(url, limit):
+    req = _ur.Request(url, headers={"User-Agent": "SofiShop/1.0 (boutique en ligne, photos produits)"})
+    with _obf_opener.open(req, timeout=12) as r:
+        data = r.read(limit + 1)
+    if len(data) > limit:
+        raise ValueError("fichier trop volumineux")
+    return data
+
+
+@app.route("/api/admin/photo-search", methods=["GET"])
+def api_photo_search():
+    if not is_admin():
+        return jsonify({"error": "Non autorisé"}), 401
+    q = (request.args.get("q") or "").strip()[:80]
+    if len(q) < 2:
+        return jsonify([])
+    url = "https://world.openbeautyfacts.org/cgi/search.pl?" + _up.urlencode({
+        "search_terms": q, "search_simple": 1, "action": "process", "json": 1,
+        "page_size": 24, "fields": "product_name,brands,image_front_url,image_front_small_url,code"})
+    try:
+        data = _json.loads(_obf_fetch(url, 2 * 1024 * 1024).decode("utf-8", "replace"))
+    except Exception:
+        app.logger.exception("Recherche de photos")
+        return jsonify({"error": "Service de photos indisponible"}), 502
+    out, seen = [], set()
+    for p in (data.get("products") or []):
+        img = p.get("image_front_url") or ""
+        if not _obf_host_ok(img) or img in seen:
+            continue
+        seen.add(img)
+        thumb = p.get("image_front_small_url") or img
+        out.append({
+            "name": str(p.get("product_name") or "")[:120],
+            "brand": str(p.get("brands") or "")[:80],
+            "image": img,
+            "thumb": thumb if _obf_host_ok(thumb) else img,
+        })
+        if len(out) >= 6:
+            break
+    return jsonify(out)
+
+
+@app.route("/api/admin/photo-import", methods=["POST"])
+def api_photo_import():
+    g = _admin_db_guard()
+    if g:
+        return g
+    body = request.get_json(silent=True)
+    u = body.get("url") if isinstance(body, dict) else None
+    if not isinstance(u, str) or len(u) > 500 or not _obf_host_ok(u):
+        return jsonify({"error": "Adresse d'image non autorisée"}), 400
+    try:
+        data = _obf_fetch(u, 3 * 1024 * 1024)
+    except Exception:
+        app.logger.exception("Import de photo")
+        return jsonify({"error": "Téléchargement impossible"}), 502
+    mime = _image_mime(data)
+    if not mime:
+        return jsonify({"error": "Format d'image non accepté"}), 400
+    iid = _secrets.token_urlsafe(12)
+    try:
+        _ensure_images()
+        with pg() as c:
+            c.execute("INSERT INTO product_images (id, mime, data) VALUES (%s, %s, %s)", (iid, mime, data))
+        return jsonify({"ok": True, "url": "/api/images/" + iid}), 201
+    except Exception:
+        app.logger.exception("Enregistrement de la photo importée")
         return jsonify({"error": "Erreur serveur"}), 500
 
 # ===== Fin produits =====
