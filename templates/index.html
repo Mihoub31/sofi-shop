@@ -1420,19 +1420,30 @@ en:{title:"Product photos",sub:"Search a product, then add or replace its photo.
     var phQuery="",phSel="",phBlob=null,phPrev="",phBusy=false;
     function phNorm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}
     function phMatches(q){
-      q=phNorm(q);if(!q)return [];
-      var out=[];
+      q=phNorm(q).replace(/\\s+/g," ");
+      if(!q)return [];
+      var terms=q.split(" ").filter(Boolean),out=[];
       state.products.forEach(function(p){
         var names=[p.name&&p.name.fr,p.name&&p.name.ar,p.name&&p.name.en,p.brand].map(phNorm).filter(Boolean);
-        var score=0;
+        var best=0;
         names.forEach(function(n){
-          if(n.indexOf(q)===0)score=Math.max(score,3);
-          else if(n.split(/\s+/).some(function(w){return w.indexOf(q)===0}))score=Math.max(score,2);
-          else if(n.indexOf(q)>-1)score=Math.max(score,1);
+          var score=0;
+          if(n===q)score=100;
+          else if(n.indexOf(q)===0)score=80;
+          else if(n.indexOf(q)>-1)score=60;
+          else {
+            var words=n.split(/\\s+/);
+            var matched=terms.filter(function(t){
+              return words.some(function(w){return w.indexOf(t)===0})||n.indexOf(t)>-1;
+            }).length;
+            if(matched===terms.length)score=40+matched;
+            else if(matched>0)score=10+matched;
+          }
+          if(score>best)best=score;
         });
-        if(score>0)out.push({p:p,s:score});
+        if(best>0)out.push({p:p,s:best});
       });
-      out.sort(function(a,b){return b.s-a.s});
+      out.sort(function(a,b){return b.s-a.s||String(tr(a.p)).localeCompare(String(tr(b.p)))});
       return out.slice(0,8).map(function(x){return x.p});
     }
     function phResultsHTML(){
