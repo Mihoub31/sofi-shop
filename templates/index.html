@@ -1174,6 +1174,8 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
       const d=state.settings.delivery[code];const commune=document.getElementById("coCommune");
       if(commune){commune.innerHTML=`<option value="">${t("commune")}</option>${(d?.communes||[]).map(c=>`<option>${esc(c)}</option>`).join("")}`;checkoutCommune=""}
       const method=document.querySelector('input[name="delivery"]:checked');if(method&&d&&!d.relayAvailable&&method.value==="pickup"){method.checked=false;checkoutMethod="home"}
+      /* pkRelay */const pk=document.querySelector('input[name="delivery"][value="pickup"]');
+      if(pk){const ok=!!(d&&d.relayAvailable);pk.disabled=!ok;const sm=pk.parentElement&&pk.parentElement.querySelector("small");if(sm)sm.textContent=ok?money(d.relay):(d?t("pickupUnavailable"):t("selectWilaya"))}
       updateCheckoutSummary();
     }
 
