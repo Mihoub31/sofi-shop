@@ -1633,13 +1633,15 @@ en:{best:"Best sellers",qty:"sold",none:"No sales yet",avg:"Average basket",week
       },true);
     })();
     /* XDEBUG */
+    function xdbg(m){var b=document.getElementById("xdbg");if(!b){b=document.createElement("div");b.id="xdbg";b.style.cssText="position:fixed;left:8px;right:8px;top:8px;z-index:2147483647;background:#000;color:#0f0;font:12px monospace;padding:8px;border-radius:8px;word-break:break-all";document.body.appendChild(b)}b.textContent=m;b.style.display="block";clearTimeout(b._t);b._t=setTimeout(function(){b.style.display="none"},8000)}
+    
     document.addEventListener("pointerdown",function(e){
       var d=document.getElementById("cartDrawer");
       if(!d||!d.classList.contains("open"))return;
       var el=document.elementFromPoint(e.clientX,e.clientY);
       var b=d.querySelector("[data-cart-close]");var r=b?b.getBoundingClientRect():null;
       var cn=el?(el.className&&el.className.baseVal!==undefined?el.className.baseVal:el.className):"";
-      toast("Clic sur: "+(el?el.tagName+"."+cn:"?")+" | X: "+(r?Math.round(r.left)+","+Math.round(r.top)+" "+Math.round(r.width)+"x"+Math.round(r.height):"absent")+" | clic: "+Math.round(e.clientX)+","+Math.round(e.clientY));
+      xdbg("Clic sur: "+(el?el.tagName+"."+cn:"?")+" | X: "+(r?Math.round(r.left)+","+Math.round(r.top)+" "+Math.round(r.width)+"x"+Math.round(r.height):"absent")+" | clic: "+Math.round(e.clientX)+","+Math.round(e.clientY));
     },true);
     document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeCart()}});
 
