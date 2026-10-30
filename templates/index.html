@@ -555,6 +555,7 @@
   <div id="modalRoot"></div>
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
+  <script type="application/json" id="serverData">{"products": {{ server_products|tojson }}, "settings": {{ server_settings|tojson }}}</script>
   <script>
   (() => {
     "use strict";
@@ -666,8 +667,77 @@
 
     const STORAGE_KEY="sofi_shop_pro_v4";
     const CATALOG_VERSION=2;
-    const SERVER_PRODUCTS={{ server_products|tojson }};
-    const SERVER_SETTINGS={{ server_settings|tojson }};
+    function readServerData(){
+      try{
+        const el=document.getElementById("serverData");
+        const data=el?JSON.parse(el.textContent):null;
+        return {
+          products:data&&Array.isArray(data.products)?data.products:null,
+          settings:data&&data.settings&&typeof data.settings==="object"?data.settings:null
+        };
+      }catch(e){return {products:null,settings:null}}
+    }
+    const SERVER_DATA=readServerData();
+    const SERVER_PRODUCTS=SERVER_DATA.products;
+    const SERVER_SETTINGS=SERVER_DATA.settings;
+    const LOCAL_PREVIEW=location.protocol==="file:";
+    function localJson(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json"}})}
+    function localSettingsPayload(){return {customized:true,freeShippingThreshold:state.settings.freeShippingThreshold,delivery:state.settings.delivery,promos:state.promos}}
+    function localFileUrl(file){
+      return new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||""));r.onerror=()=>resolve("");r.readAsDataURL(file)});
+    }
+    function installLocalPreviewApi(){
+      if(!LOCAL_PREVIEW||window.__sofiLocalApi)return;
+      window.__sofiLocalApi=true;
+      const realFetch=window.fetch.bind(window);
+      window.fetch=async function(input,init){
+        const raw=typeof input==="string"?input:(input&&input.url)||"";
+        const clean=raw.replace(/^https?:\/\/[^/]+/,"").replace(/^\/?/,"");
+        if(clean.indexOf("api/")!==0)return realFetch(input,init);
+        const qs=clean.indexOf("?"),path=qs<0?clean:clean.slice(0,qs),query=qs<0?"":clean.slice(qs+1);
+        const method=String((init&&init.method)||(input&&input.method)||"GET").toUpperCase();
+        const body=init&&init.body;
+        const readJson=()=>{try{return typeof body==="string"?JSON.parse(body):null}catch(e){return null}};
+        const idFrom=prefix=>decodeURIComponent(path.slice(prefix.length));
+        if(path==="api/products"&&method==="GET")return localJson(state.products);
+        if(path==="api/settings"&&method==="GET")return localJson(localSettingsPayload());
+        if(path==="api/orders"&&method==="POST")return localJson({ok:true},201);
+        if(path==="api/admin/session")return localJson({authenticated:true});
+        if(path==="api/admin/login")return localJson({ok:true});
+        if(path==="api/admin/logout")return localJson({ok:true});
+        if(path==="api/admin/orders"&&method==="GET")return localJson(state.orders);
+        if(path.indexOf("api/admin/orders/")===0&&path.slice(-7)==="/status"&&method==="PATCH"){
+          const id=decodeURIComponent(path.slice("api/admin/orders/".length,-7)),o=state.orders.find(x=>x.id===id),d=readJson();
+          if(o&&d)o.status=d.status;persist();return localJson({ok:true});
+        }
+        if(path==="api/admin/products"&&method==="POST")return localJson({product:readJson()},201);
+        if(path.indexOf("api/admin/products/")===0){
+          const id=idFrom("api/admin/products/");
+          if(method==="PUT"){const p=readJson()||{};p.id=id;return localJson({product:p})}
+          if(method==="DELETE")return localJson({ok:true});
+        }
+        if(path==="api/admin/settings"&&method==="PUT"){const p=readJson()||{};applyServerSettings({...p,customized:true});persist();return localJson({settings:localSettingsPayload()})}
+        if(path==="api/admin/upload"){
+          const file=body&&body.get?body.get("file"):null;
+          if(!file)return localJson({error:"Fichier manquant"},400);
+          const url=await localFileUrl(file);
+          return url?localJson({url}):localJson({error:"Lecture impossible"},400);
+        }
+        if(path==="api/admin/photo-import"){const p=readJson();return p&&p.url?localJson({url:p.url}):localJson({error:"Lien manquant"},400)}
+        if(path==="api/admin/photo-search")return localJson([]);
+        if(path==="api/admin/photo-suggestions"){
+          const q=decodeURIComponent((query.split("&").find(x=>x.indexOf("q=")===0)||"q=").slice(2)).toLowerCase();
+          const list=state.products.filter(p=>String((p.name&&p.name.fr)||"").toLowerCase().indexOf(q)>-1).slice(0,6)
+            .map(p=>({name:(p.name&&p.name.fr)||"",brand:p.brand||""}));
+          return localJson(list);
+        }
+        if(path==="api/admin/usage"){
+          const serialized=JSON.stringify(state),images=state.products.filter(p=>String(p.image||"").indexOf("data:image/")===0);
+          return localJson({dbBytes:serialized.length,limitBytes:524288000,products:state.products.length,images:images.length,imageBytes:images.reduce((s,p)=>s+String(p.image).length,0),orders:state.orders.length});
+        }
+        return localJson({error:"Action indisponible en aperçu local"},404);
+      };
+    }
     function applyServerSettings(s){
       if(!s||typeof s!=="object"||!s.delivery||typeof s.delivery!=="object")return false;
       const delivery={...state.settings.delivery};
@@ -702,6 +772,7 @@
       }catch(e){return base}
     }
     let state=loadState();state.catalogVersion=CATALOG_VERSION;if(Array.isArray(SERVER_PRODUCTS)&&SERVER_PRODUCTS.length)state.products=SERVER_PRODUCTS;
+    installLocalPreviewApi();
     const legacySettingsSnapshot=localSettingsSnapshot();
     let serverSettingsCustomized=false;
     if(SERVER_SETTINGS)applyServerSettings(SERVER_SETTINGS);
@@ -754,7 +825,7 @@
     function num(value){return new Intl.NumberFormat(lang==="ar"?"ar-DZ":lang==="en"?"en-DZ":"fr-DZ",{maximumFractionDigits:0}).format(Number(value)||0)}
     function money(value){return `${num(value)} DA`}
     function categoryName(slug){const c=categories.find(x=>x.slug===slug);return c?tr(c):slug}
-    function safeImage(url){return /^(https?:\/\/|\/api\/images\/)/i.test(url||"")?url:placeholderImage}
+    function safeImage(url){return /^(https?:\/\/|\/api\/images\/|data:image\/(?:png|jpe?g|webp|gif);base64,)/i.test(url||"")?url:placeholderImage}
     function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
     async function reloadProducts(){
       try{
@@ -1329,7 +1400,7 @@ en:{title:"The Sofi Wheel",sub:"Turn the wheel to discover our products.",label:
       return `<section class="admin-page"><div class="container"><div class="admin-shell">
         <aside class="admin-sidebar"><a href="#home" class="brand" data-route="home"><span class="brand-name">SOFI SHOP</span><small>${t("admin")}</small></a><nav class="admin-nav">
           ${[["dashboard","layout-dashboard"],["products","package"],["orders","shopping-bag"],["clients","users"],["deliverySettings","truck"],["promotions","ticket-percent"],["settings","settings"]].map(x=>`<button class="${adminTab===x[0]?"active":""}" data-admin-tab="${x[0]}">${icon(x[1])} ${t(x[0])}</button>`).join("")}
-        </nav><div class="admin-sidebar-bottom"><button class="btn btn-soft btn-sm btn-block" data-admin-logout>${icon("log-out")} ${t("logout")}</button></div></aside>
+        </nav><div class="admin-sidebar-bottom">${LOCAL_PREVIEW?'<p class="muted small" style="margin:0 0 10px">Aperçu local — les changements restent dans ce navigateur.</p>':""}<button class="btn btn-soft btn-sm btn-block" data-admin-logout>${icon("log-out")} ${t("logout")}</button></div></aside>
         <div class="admin-content"><div id="adminMain"></div></div>
       </div></div></section>`;
     }
@@ -1961,7 +2032,7 @@ en:{btn:"Search a photo online",wait:"Searching…",none:"No photo found. Try an
     });
 
     document.addEventListener("submit",async e=>{
-      e.preventDefault();const form=e.target,id=form.id,fd=new FormData(form);
+      e.preventDefault();const form=e.target,id=form.getAttribute("id"),fd=new FormData(form);
       if(id==="headerSearchForm"||id==="mobileSearchForm"){
         const input=document.getElementById(id==="headerSearchForm"?"headerSearchInput":"mobileSearchInput");
         shopFilters.query=input.value.trim();location.hash="shop";if(location.hash==="#shop")renderCurrentPage();return;
