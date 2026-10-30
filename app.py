@@ -19,7 +19,8 @@ app = Flask(__name__)
 
 @app.route("/")
 def accueil():
-    return render_template("index.html", server_products=get_products())
+    return render_template("index.html", server_products=get_products(),
+                           server_settings=get_settings())
 
 
 import sqlite3
@@ -84,7 +85,8 @@ def admin_session_status():
 
 @app.route("/api/admin/logout", methods=["POST"])
 def admin_logout():
-    session.clear()
+    if admin_configured():
+        session.clear()
     return jsonify({"ok": True}), 200
 
 @app.route("/api/orders", methods=["POST"])
@@ -125,16 +127,40 @@ def save_order():
     order_id = data["id"]
     ref = data["ref"]
     created_at = data["createdAt"]
-    if not all(isinstance(x, str) and 1 <= len(x) <= 100
-               for x in (order_id, ref, created_at)):
+    if not all(isinstance(x, str) and _ID_RE.match(x) for x in (order_id, ref)):
+        return jsonify({"error": "Identifiants invalides"}), 400
+    if not isinstance(created_at, str) or len(created_at) > 100:
         return jsonify({"error": "Identifiants invalides"}), 400
     try:
         datetime.fromisoformat(created_at.replace("Z", "+00:00"))
     except ValueError:
         return jsonify({"error": "Date invalide"}), 400
 
+    shop = get_settings()
+    delivery_cfg = shop.get("delivery") if isinstance(shop, dict) else None
+    if not isinstance(delivery_cfg, dict) or not delivery_cfg:
+        return jsonify({"error": "Configuration boutique indisponible"}), 503
+
+    method = delivery["method"]
+    wilaya = customer["wilaya"].strip()
+    wilaya_cfg = delivery_cfg.get(wilaya)
+    if not isinstance(wilaya_cfg, dict):
+        return jsonify({"error": "Wilaya de livraison inconnue"}), 400
+    if method == "pickup" and not wilaya_cfg.get("relayAvailable"):
+        return jsonify({"error": "Retrait au bureau indisponible dans cette wilaya"}), 400
+    communes = {}
+    for name in wilaya_cfg.get("communes") or []:
+        if isinstance(name, str) and name.strip():
+            communes[name.strip().casefold()] = name.strip()
+    commune = customer["commune"].strip()
+    if communes:
+        commune = communes.get(commune.casefold(), "")
+        if not commune:
+            return jsonify({"error": "Commune invalide pour cette wilaya"}), 400
+    customer["wilaya"] = wilaya
+    customer["commune"] = commune
+
     clean_items = []
-    subtotal = 0.0
     for item in items:
         if not isinstance(item, dict):
             return jsonify({"error": "Article invalide"}), 400
@@ -144,7 +170,10 @@ def save_order():
             total = float(item["total"])
             name = item["name"]
             product_id = item.get("productId", "")
+            mode = item.get("mode", "retail")
             if isinstance(qty, bool) or not isinstance(qty, int) or not 1 <= qty <= 100:
+                raise ValueError()
+            if mode not in ("retail", "pack", "wholesale"):
                 raise ValueError()
             if not math.isfinite(price) or not math.isfinite(total) or price < 0 or total < 0:
                 raise ValueError()
@@ -157,45 +186,119 @@ def save_order():
         except (KeyError, TypeError, ValueError, OverflowError):
             return jsonify({"error": "Quantité, prix ou article invalide"}), 400
 
-        subtotal += total
+        item["mode"] = mode
         clean_items.append((product_id, name.strip(), qty, price, total))
-
-    try:
-        fee = float(delivery.get("fee"))
-        reported_total = float(totals.get("total"))
-        if not math.isfinite(fee) or not math.isfinite(reported_total) or fee < 0:
-            raise ValueError()
-        pack_qty, pack_sum, pack_max = 0, 0.0, 0.0
-        for it in items:
-            if it.get("mode") == "pack":
-                q = it["qty"]
-                pr = float(it["unitPrice"])
-                pack_qty += q
-                pack_sum += pr * q
-                pack_max = max(pack_max, pr)
-        rate = 0.30 if pack_max <= 1000 else 0.25 if pack_max <= 5000 else 0.20
-        pack_disc = round(pack_sum * rate, 2) if pack_qty >= 3 else 0.0
-        reported_pack = float(totals.get("packDiscount") or 0)
-        if abs(reported_pack - pack_disc) > 0.02:
-            return jsonify({"error": "Remise pack incorrecte"}), 400
-        coupon = float(totals.get("couponDiscount") or 0)
-        if not math.isfinite(coupon) or coupon < 0 or coupon > subtotal - pack_disc + 0.02:
-            return jsonify({"error": "Remise invalide"}), 400
-        if abs(reported_total - (subtotal - pack_disc - coupon + fee)) > 0.02:
-            return jsonify({"error": "Total incohérent"}), 400
-    except (TypeError, ValueError, OverflowError):
-        return jsonify({"error": "Montants invalides"}), 400
 
     if psycopg is None or not os.environ.get("DATABASE_URL"):
         return jsonify({"error": "Base de données non configurée"}), 503
+    product_ids = sorted({it[0] for it in clean_items if it[0]})
+    try:
+        init_pg()
+        with pg() as c:
+            rows = c.execute(
+                "SELECT id, (data->>'price')::numeric AS p FROM products WHERE id = ANY(%s)",
+                (product_ids,)).fetchall() if product_ids else []
+        prices = {r["id"]: float(r["p"]) for r in rows if r["p"] is not None}
+    except Exception:
+        app.logger.exception("Lecture des prix produits")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+    subtotal = 0.0
+    for pid, _name, qty, price, _total in clean_items:
+        if not pid or pid not in prices:
+            return jsonify({"error": "Produit indisponible"}), 409
+        if abs(price - prices[pid]) > 0.02:
+            return jsonify({"error": "Prix d'un produit modifié"}), 409
+        subtotal += prices[pid] * qty
+    for item in items:
+        unit = prices[item["productId"]]
+        item["unitPrice"] = unit
+        item["total"] = _round2(unit * item["qty"])
+
+    pack_qty, pack_sum, pack_max, pack_ids = 0, 0.0, 0.0, set()
+    for item in items:
+        if item["mode"] == "pack":
+            pack_qty += item["qty"]
+            pack_sum += item["unitPrice"] * item["qty"]
+            pack_max = max(pack_max, item["unitPrice"])
+            pack_ids.add(item["productId"])
+    rate = 0.30 if pack_max <= 1000 else 0.25 if pack_max <= 5000 else 0.20
+    pack_disc = _round2(pack_sum * rate) if pack_qty >= 3 and len(pack_ids) >= 3 else 0.0
+
+    coupon_code = data.get("coupon") or ""
+    if not isinstance(coupon_code, str) or len(coupon_code) > 40:
+        return jsonify({"error": "Code de remise invalide"}), 400
+    coupon_code = coupon_code.strip().upper()
+    coupon_disc = 0.0
+    coupon_base = subtotal - pack_disc
+    if coupon_code:
+        promo = next((p for p in (shop.get("promos") or [])
+                      if isinstance(p, dict) and p.get("active")
+                      and str(p.get("code") or "").upper() == coupon_code), None)
+        try:
+            minimum = float(promo.get("min") or 0) if promo else 0.0
+        except (TypeError, ValueError):
+            minimum = 0.0
+        if promo is not None and coupon_base >= minimum:
+            try:
+                value = float(promo.get("value") or 0)
+                cap = float(promo.get("maxDiscount") or 0)
+            except (TypeError, ValueError):
+                value, cap = 0.0, 0.0
+            if math.isfinite(value) and math.isfinite(cap) and value >= 0:
+                coupon_disc = coupon_base * value / 100 if promo.get("type") == "percent" else value
+                if cap > 0:
+                    coupon_disc = min(coupon_disc, cap)
+                coupon_disc = _round2(min(max(coupon_disc, 0.0), coupon_base))
+                coupon_code = str(promo.get("code") or coupon_code).upper()
+            else:
+                coupon_code = ""
+        else:
+            coupon_code = ""
+
+    try:
+        reported_fee = float(delivery.get("fee"))
+        reported_coupon = float(totals.get("couponDiscount") or 0)
+        reported_pack = float(totals.get("packDiscount") or 0)
+        reported_total = float(totals.get("total"))
+        if not all(math.isfinite(x) for x in (reported_fee, reported_coupon,
+                                              reported_pack, reported_total)):
+            raise ValueError()
+        if reported_fee < 0 or reported_coupon < 0 or reported_pack < 0:
+            raise ValueError()
+    except (TypeError, ValueError, OverflowError):
+        return jsonify({"error": "Montants invalides"}), 400
+
+    if abs(reported_pack - pack_disc) > 0.02:
+        return jsonify({"error": "Remise pack incorrecte"}), 400
+    if abs(reported_coupon - coupon_disc) > 0.02:
+        return jsonify({"error": "Remise incorrecte"}), 400
+
+    after_discounts = coupon_base - coupon_disc
+    fee = float(wilaya_cfg.get("relay" if method == "pickup" else "home") or 0)
+    if after_discounts >= float(shop.get("freeShippingThreshold") or 0):
+        fee = 0.0
+    if abs(reported_fee - fee) > 0.02:
+        return jsonify({"error": "Frais de livraison incorrects"}), 400
+    expected_total = after_discounts + fee
+    if abs(reported_total - expected_total) > 0.02:
+        return jsonify({"error": "Total incohérent"}), 400
+
+    delivery["fee"] = fee
+    totals.update({
+        "subtotal": _round2(subtotal), "packDiscount": pack_disc,
+        "couponDiscount": coupon_disc, "shipping": fee,
+        "total": _round2(expected_total),
+    })
     order = {
         "id": order_id, "ref": ref, "createdAt": created_at, "status": "pending",
-        "demo": False, "customer": customer, "delivery": delivery,
+        "demo": False, "customer": customer, "delivery": delivery, "coupon": coupon_code,
         "payment": data["payment"], "items": items, "totals": totals,
     }
     if len(json.dumps(order, ensure_ascii=False)) > 60000:
         return jsonify({"error": "Commande trop volumineuse"}), 400
     try:
+        init_pg()
         _ensure_orders()
         with pg() as c:
             c.execute(
@@ -224,9 +327,6 @@ def save_order():
     except Exception:
         app.logger.exception("Erreur enregistrement commande")
         return jsonify({"error": "Erreur serveur"}), 500
-    finally:
-        if conn is not None:
-            conn.close()
 
 
 # ===== Produits (PostgreSQL / Neon) =====
@@ -259,6 +359,10 @@ def init_pg():
             position BIGINT NOT NULL DEFAULT 0,
             updated_at TIMESTAMPTZ DEFAULT now())""")
         c.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
+        c.execute("""CREATE TABLE IF NOT EXISTS shop_settings (
+            id SMALLINT PRIMARY KEY CHECK (id = 1),
+            data JSONB NOT NULL,
+            updated_at TIMESTAMPTZ DEFAULT now())""")
         done = c.execute("SELECT 1 FROM meta WHERE key = 'catalogue_seeded'").fetchone()
         if not done:
             f = Path(__file__).resolve().parent / "catalogue_initial.json"
@@ -269,6 +373,12 @@ def init_pg():
                         "INSERT INTO products (id, data, position) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING",
                         (p["id"], Jsonb(p), i))
             c.execute("INSERT INTO meta (key, value) VALUES ('catalogue_seeded', '1') ON CONFLICT DO NOTHING")
+        has_settings = c.execute("SELECT 1 FROM shop_settings WHERE id = 1").fetchone()
+        if not has_settings:
+            seed = clean_settings(_seed_settings())
+            if seed is not None:
+                c.execute("INSERT INTO shop_settings (id, data) VALUES (1, %s) ON CONFLICT DO NOTHING",
+                          (Jsonb(seed),))
     _pg_ready = True
 
 
@@ -283,6 +393,120 @@ def get_products():
     except Exception:
         app.logger.exception("Lecture des produits impossible")
         return None
+
+
+def _seed_settings():
+    f = Path(__file__).resolve().parent / "settings_initial.json"
+    try:
+        d = _json.loads(f.read_text(encoding="utf-8"))
+    except Exception:
+        app.logger.exception("Lecture des réglages initiaux impossible")
+        return None
+    return d if isinstance(d, dict) else None
+
+
+def _setting_num(v, lo, hi):
+    if isinstance(v, bool):
+        return None
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    if not _math.isfinite(x) or x < lo or x > hi:
+        return None
+    return int(x) if x.is_integer() else round(x, 2)
+
+
+def _round2(x):
+    return _math.floor(x * 100 + 0.5) / 100
+
+
+def clean_settings(d):
+    if not isinstance(d, dict):
+        return None
+    threshold = _setting_num(d.get("freeShippingThreshold", 0), 0, 10_000_000)
+    if threshold is None:
+        return None
+    delivery = d.get("delivery")
+    if not isinstance(delivery, dict) or not delivery or len(delivery) > 120:
+        return None
+    clean_delivery = {}
+    for code, info in delivery.items():
+        if not isinstance(code, str) or not _re.match(r"^\d{1,2}$", code) or not isinstance(info, dict):
+            return None
+        home = _setting_num(info.get("home"), 0, 100_000)
+        relay = _setting_num(info.get("relay"), 0, 100_000)
+        communes = info.get("communes")
+        if home is None or relay is None or not isinstance(communes, list) or len(communes) > 300:
+            return None
+        seen, clean_communes = set(), []
+        for name in communes:
+            if not isinstance(name, str):
+                return None
+            name = name.strip()
+            if not name or len(name) > 120:
+                return None
+            key = name.casefold()
+            if key not in seen:
+                seen.add(key)
+                clean_communes.append(name)
+        if not clean_communes:
+            return None
+        clean_delivery[code] = {
+            "home": home, "relay": relay,
+            "relayAvailable": bool(info.get("relayAvailable")),
+            "communes": clean_communes,
+        }
+    promos = d.get("promos", [])
+    if not isinstance(promos, list) or len(promos) > 100:
+        return None
+    clean_promos, ids, codes = [], set(), set()
+    for p in promos:
+        if not isinstance(p, dict):
+            return None
+        pid, code = p.get("id"), p.get("code")
+        if not isinstance(pid, str) or not _ID_RE.match(pid) or pid in ids:
+            return None
+        if not isinstance(code, str):
+            return None
+        code = code.strip().upper()
+        if not _re.match(r"^[A-Z0-9_-]{2,40}$", code) or code in codes:
+            return None
+        if p.get("type") not in ("percent", "fixed"):
+            return None
+        value = _setting_num(p.get("value"), 0, 10_000_000)
+        minimum = _setting_num(p.get("min", 0), 0, 10_000_000)
+        cap = _setting_num(p.get("maxDiscount", 0), 0, 10_000_000)
+        if value is None or minimum is None or cap is None:
+            return None
+        if p["type"] == "percent" and value > 100:
+            return None
+        ids.add(pid)
+        codes.add(code)
+        clean_promos.append({
+            "id": pid, "code": code, "type": p["type"], "value": value,
+            "min": minimum, "maxDiscount": cap, "active": bool(p.get("active")),
+        })
+    return {
+        "customized": bool(d.get("customized")),
+        "freeShippingThreshold": threshold,
+        "delivery": clean_delivery,
+        "promos": clean_promos,
+    }
+
+
+def get_settings():
+    if psycopg is None or not os.environ.get("DATABASE_URL"):
+        return _seed_settings()
+    try:
+        init_pg()
+        with pg() as c:
+            row = c.execute("SELECT data FROM shop_settings WHERE id = 1").fetchone()
+        if row and isinstance(row["data"], dict):
+            return row["data"]
+    except Exception:
+        app.logger.exception("Lecture des réglages impossible")
+    return _seed_settings()
 
 
 def is_admin():
@@ -358,6 +582,36 @@ def api_products():
     if items is None:
         return jsonify({"error": "Base de données indisponible"}), 503
     return jsonify(items)
+
+
+@app.route("/api/settings", methods=["GET"])
+def api_settings():
+    shop = get_settings()
+    if not isinstance(shop, dict):
+        return jsonify({"error": "Configuration indisponible"}), 503
+    return jsonify(shop)
+
+
+@app.route("/api/admin/settings", methods=["PUT"])
+def api_admin_settings_save():
+    g = _admin_db_guard()
+    if g:
+        return g
+    clean = clean_settings(request.get_json(silent=True))
+    if clean is None:
+        return jsonify({"error": "Réglages invalides"}), 400
+    clean["customized"] = True
+    try:
+        init_pg()
+        with pg() as c:
+            c.execute(
+                "INSERT INTO shop_settings (id, data) VALUES (1, %s) "
+                "ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()",
+                (Jsonb(clean),))
+        return jsonify({"ok": True, "settings": clean})
+    except Exception:
+        app.logger.exception("Enregistrement des réglages")
+        return jsonify({"error": "Erreur serveur"}), 500
 
 
 @app.route("/api/admin/products", methods=["POST"])

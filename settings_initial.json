@@ -1,0 +1,694 @@
+{
+  "customized": false,
+  "freeShippingThreshold": 5000,
+  "delivery": {
+    "10": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Bouira",
+        "Sidi M'hamed",
+        "Aïn El Turk"
+      ]
+    },
+    "11": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Tamanrasset",
+        "In Guezzam",
+        "Abéïbara"
+      ]
+    },
+    "12": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Tébessa",
+        "Bisk",
+        "Chermou"
+      ]
+    },
+    "13": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Tlemcen",
+        "Chlef",
+        "Mansourah"
+      ]
+    },
+    "14": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Tiaret",
+        "Frenda",
+        "Ksar Chellala"
+      ]
+    },
+    "15": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Tizi Ouzou",
+        "Bounouh",
+        "Aïn El Hammam"
+      ]
+    },
+    "16": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Alger",
+        "Bab Ezzouar",
+        "Hydra"
+      ]
+    },
+    "17": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Djelfa",
+        "Aïn Oussera",
+        "Hassi Gara"
+      ]
+    },
+    "18": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Jijel",
+        "Tahouna",
+        "El Milia"
+      ]
+    },
+    "19": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Sétif",
+        "Aïn Arnat",
+        "El Eulma"
+      ]
+    },
+    "20": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Saïda",
+        "Aïn El Hadjar",
+        "Sidi Bou Aissa"
+      ]
+    },
+    "21": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Skikda",
+        "Ben Badis",
+        "El Hattab"
+      ]
+    },
+    "22": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Sidi Bel Abbès",
+        "Tlemcen",
+        "Sfizef"
+      ]
+    },
+    "23": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Annaba",
+        "El Bouni",
+        "Sidi Amar"
+      ]
+    },
+    "24": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Guelma",
+        "Bouchegouf",
+        "Hammam Debagh"
+      ]
+    },
+    "25": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Constantine",
+        "El Khroub",
+        "Zouaghi"
+      ]
+    },
+    "26": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Médéa",
+        "Ksar Bouzid",
+        "Berrouaghia"
+      ]
+    },
+    "27": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Mostaganem",
+        "Aïn Témouchent",
+        "Sidi Ali"
+      ]
+    },
+    "28": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "M'Sila",
+        "Bordj Bou Arreridj",
+        "Ouled Djellal"
+      ]
+    },
+    "29": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Mascara",
+        "Tiaret",
+        "Sidi Ali"
+      ]
+    },
+    "30": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Ouargla",
+        "El Oued",
+        "Touggourt"
+      ]
+    },
+    "31": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Oran",
+        "Es Sénia",
+        "Bir El Djir"
+      ]
+    },
+    "32": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "El Bayadh",
+        "Boussoufa",
+        "El Ghicha"
+      ]
+    },
+    "33": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Illizi",
+        "In Amenas",
+        "Djanet"
+      ]
+    },
+    "34": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Bordj Bou Arreridj",
+        "M'Sila",
+        "Ras El M'Ghour"
+      ]
+    },
+    "35": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Boumerdès",
+        "Dellys",
+        "Bordj El Kiffan"
+      ]
+    },
+    "36": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "El Tarf",
+        "Khroub",
+        "Oum Touyour"
+      ]
+    },
+    "37": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Tindouf",
+        "Ouled Saïd",
+        "Tinerkouk"
+      ]
+    },
+    "38": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Tissemsilt",
+        "Tiaret",
+        "Larbey"
+      ]
+    },
+    "39": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "El Oued",
+        "Guerrara",
+        "Touggourt"
+      ]
+    },
+    "40": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Khenchela",
+        "Ksar M'Sila",
+        "Mchednah"
+      ]
+    },
+    "41": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Souk Ahras",
+        "Oued Laouata",
+        "M'Daourouch"
+      ]
+    },
+    "42": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Tipaza",
+        "Bourouba",
+        "Hadjout"
+      ]
+    },
+    "43": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Mila",
+        "Fdjadja",
+        "Chahbounia"
+      ]
+    },
+    "44": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Aïn Defla",
+        "El Tarf",
+        "Miliana"
+      ]
+    },
+    "45": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Naâma",
+        "Mechria",
+        "Aïn Sefra"
+      ]
+    },
+    "46": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Aïn Témouchent",
+        "Oued Tlikh",
+        "Tlemcen"
+      ]
+    },
+    "47": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Ghardaïa",
+        "El Meniaa",
+        "Bri"
+      ]
+    },
+    "48": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Relizane",
+        "Aïn Témouchent",
+        "Oued R'hiou"
+      ]
+    },
+    "49": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Timimoun",
+        "Ouled Saïd",
+        "Charouine"
+      ]
+    },
+    "50": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Bordj Badji Mokhtar",
+        "Timimoun",
+        "Guerguer"
+      ]
+    },
+    "51": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Ouled Djellal",
+        "Sidi Khaled",
+        "Ras El Miaad"
+      ]
+    },
+    "52": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Béni Abbès",
+        "El Meniaa",
+        "Igli"
+      ]
+    },
+    "53": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "In Salah",
+        "Foggaret Ezzoua",
+        "Tinerkouk"
+      ]
+    },
+    "54": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "In Guezzam",
+        "Tamanrasset",
+        "Tin Zaouatine"
+      ]
+    },
+    "55": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Touggourt",
+        "Ouargla",
+        "Megarine"
+      ]
+    },
+    "56": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "Djanet",
+        "Illizi",
+        "Bordj El Hass"
+      ]
+    },
+    "57": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "El M'Ghair",
+        "El Oued",
+        "Djamaa"
+      ]
+    },
+    "58": {
+      "home": 700,
+      "relay": 600,
+      "relayAvailable": true,
+      "communes": [
+        "El Meniaa",
+        "Ghardaïa",
+        "Hassi Gara"
+      ]
+    },
+    "59": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Aflou"
+      ]
+    },
+    "60": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Barika"
+      ]
+    },
+    "61": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "El Kantara"
+      ]
+    },
+    "62": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Bir El Ater"
+      ]
+    },
+    "63": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "El Aricha"
+      ]
+    },
+    "64": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Ksar Chellala"
+      ]
+    },
+    "65": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Aïn Ouessara"
+      ]
+    },
+    "66": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Messaad"
+      ]
+    },
+    "67": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Ksar El Boukhari"
+      ]
+    },
+    "68": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Bou Saâda"
+      ]
+    },
+    "69": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "El Abiodh Sidi Cheikh"
+      ]
+    },
+    "01": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Adrar",
+        "Aougrout",
+        "Fenough"
+      ]
+    },
+    "02": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Chlef",
+        "Bouskene",
+        "Tafraoui"
+      ]
+    },
+    "03": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Laghouat",
+        "Ksar El Hirane",
+        "Sidi Makhlouf"
+      ]
+    },
+    "04": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Oum El Bouaghi",
+        "Aïn Beïda",
+        "Fkirina"
+      ]
+    },
+    "05": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Batna",
+        "Biskra",
+        "Nedjma"
+      ]
+    },
+    "06": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Béjaïa",
+        "Akbou",
+        "El Kseur"
+      ]
+    },
+    "07": {
+      "home": 450,
+      "relay": 350,
+      "relayAvailable": true,
+      "communes": [
+        "Biskra",
+        "Sidi Khelil",
+        "Zeribet"
+      ]
+    },
+    "08": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Béchar",
+        "Taghit",
+        "Ksar Kenadsa"
+      ]
+    },
+    "09": {
+      "home": 350,
+      "relay": 250,
+      "relayAvailable": true,
+      "communes": [
+        "Blida",
+        "Boufarik",
+        "Larbaâ"
+      ]
+    }
+  },
+  "promos": [
+    {
+      "id": "promo1",
+      "code": "BIENVENUE10",
+      "type": "percent",
+      "value": 10,
+      "min": 2000,
+      "maxDiscount": 1500,
+      "active": true
+    },
+    {
+      "id": "promo2",
+      "code": "SOFI1500",
+      "type": "fixed",
+      "value": 1500,
+      "min": 5000,
+      "maxDiscount": 1500,
+      "active": true
+    }
+  ]
+}
